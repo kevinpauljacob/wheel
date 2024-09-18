@@ -2,7 +2,7 @@ import localfont from "next/font/local";
 import Image from "next/image";
 import Card from "./Card";
 import Lion from "/public/assets/bg-lion2.svg";
-const titleFont = localfont({ src: "../../fonts/lightmorning.ttf" });
+const titleFont = localfont({ src: "../fonts/lightmorning.ttf" });
 
 export default function YourPrize({ close }: { close: () => void }) {
   return (

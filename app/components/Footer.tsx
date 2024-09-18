@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Logo from "/public/assets/smithii-logo.svg";
 
-const socials = [
+export const socials = [
   {
     name: "Twitter",
     href: "https://twitter.com/smithii",
@@ -33,7 +33,7 @@ export default function Footer() {
         />
       </div>
       <p>© 2024 Smithii LTD | All rights reserved</p>
-      <div className="flex items-center gap-4">
+      <div className="hidden lg:flex items-center gap-4">
         {socials.map((social, index: number) => (
           <Link key={index} href={social.href}>
             <Image src={social.icon} alt={social.name} width={40} height={40} />

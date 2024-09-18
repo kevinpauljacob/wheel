@@ -1,6 +1,5 @@
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useWallet } from "@solana/wallet-adapter-react";
-import Image from "next/image";
 
 export default function ConnectWallet() {
   const wallet = useWallet();

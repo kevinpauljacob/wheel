@@ -1,7 +1,7 @@
 import localfont from "next/font/local";
 import Image from "next/image";
 import User from "/public/assets/user.svg";
-const titleFont = localfont({ src: "../../fonts/lightmorning.ttf" });
+const titleFont = localfont({ src: "../fonts/lightmorning.ttf" });
 
 export default function YourPrize({ close }: { close: () => void }) {
   return (

@@ -3,7 +3,7 @@ import localfont from "next/font/local";
 import Card from "./Card";
 import Background from "/public/assets/bg-sol.svg";
 
-const titleFont = localfont({ src: "../../fonts/lightmorning.ttf" });
+const titleFont = localfont({ src: "../fonts/lightmorning.ttf" });
 
 export default function Prizes() {
   return (

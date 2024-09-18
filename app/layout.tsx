@@ -1,21 +1,9 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import "./globals.css";
-import { Inter } from "next/font/google";
+import { Roboto_Serif } from "next/font/google";
 import { Providers } from "./providers/providers";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
-
-const inter = Inter({ subsets: ["latin"] });
+const roboto = Roboto_Serif({ subsets: ["latin"], weight: ["400", "700"] });
 
 export const metadata: Metadata = {
   title: "Wheel Smithi",
@@ -29,8 +17,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <div className="w-[100dvw] h-[100dvh] flex overflow-hidden">
+      <body className={roboto.className}>
+        <div className="">
           <Providers>{children}</Providers>
         </div>
       </body>

@@ -24,3 +24,28 @@ body {
     scrollbar-width: none; /* Firefox */
   }
 }
+
+.wheel {
+  display: flex;
+  will-change: transform;
+  /* Other necessary styles */
+}
+
+
+
+
+
+
+@keyframes spinWheel {
+  from {
+    transform: translateX(var(--start-position));
+  }
+  to {
+    transform: translateX(var(--end-position));
+  }
+}
+
+/* Animation class to trigger the spin */
+.spinning {
+  animation: spinWheel var(--animation-duration) cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}

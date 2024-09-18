@@ -1,5 +1,6 @@
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { obfuscatePubKey } from "@/utils/helpers";
 
 export default function ConnectWallet() {
   const wallet = useWallet();
@@ -13,10 +14,10 @@ export default function ConnectWallet() {
   }
 
   return (
-    <div className="bg-black border-white/50 border cursor-pointer p-2 rounded">
+    <div className="bg-secondary text-primary cursor-pointer font-bold border-[3px] border-secondary rounded-[10px] px-10 py-2.5">
       {wallet.publicKey && (
-        <strong className="text-white flex flex-1">
-          {wallet.publicKey.toBase58()}
+        <strong className="">
+          {obfuscatePubKey(wallet.publicKey.toBase58())}
         </strong>
       )}
 
@@ -28,7 +29,7 @@ export default function ConnectWallet() {
             }
           }}
         >
-          <span>CONNECT WALLET</span>
+          <span>Connect Wallet</span>
         </div>
       )}
     </div>

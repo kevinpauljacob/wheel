@@ -29,7 +29,7 @@ export default function Hero() {
           />
         </div>
         <div
-          className="relative flex flex-col justify-end gap-8 z-10 border-[7px] border-primary rounded-[30px] h-[460px] lg:h-[500px] w-full sm:w-[550px] lg:w-[70%] xl:w-[60%] max-w-[1000px] p-4 md:p-8"
+          className="relative flex flex-col justify-end gap-8 z-0 border-[7px] border-primary rounded-[30px] h-[460px] lg:h-[500px] w-full sm:w-[550px] lg:w-[70%] xl:w-[60%] max-w-[1000px] p-4 md:p-8"
           style={{
             background: "linear-gradient(0deg, #E2AD4F 0%, #921C1D 83%)",
           }}
@@ -37,7 +37,7 @@ export default function Hero() {
           <div className="flex justify-between gap-4 overflow-x-auto no-scrollbar h-max">
             <Image
               src={Breakpoint}
-              className="z-20 absolute top-3 lg:top-5 left-1/2 transform -translate-x-1/2 w-[220px] md:w-[280px]"
+              className="z-10 absolute top-3 lg:top-5 left-1/2 transform -translate-x-1/2 w-[220px] md:w-[280px]"
               alt="Breakpoint Logo"
               width={280}
               height={200}
@@ -67,7 +67,7 @@ export default function Hero() {
           </div>
         </div>
         <Image
-          className="absolute top-0 left-0 object-cover h-full w-full"
+          className="-z-10 absolute top-0 left-0 object-cover h-full w-full"
           src={Circle}
           alt="Circles background asset"
           sizes="100vw"

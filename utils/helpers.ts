@@ -1,12 +1,11 @@
 import { PublicKey } from "@metaplex-foundation/js";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { Connection, ParsedAccountData } from "@solana/web3.js";
+import { Connection, LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 export interface NFT {
   name: string;
   address: string;
   image: string;
-  type: 'CNFT' | 'NFT'
+  type: "CNFT" | "PNFT";
 }
 
 export interface Collection {
@@ -17,11 +16,12 @@ export interface TokenAccount {
   mintAddress: string;
   name?: string;
   balance: number;
+  image?: string;
 }
 
 export interface Assets {
-  NFTs: Collection;
-  cNFTs: Collection;
+  PNFT: Collection;
+  CNFT: Collection;
   Tokens: TokenAccount[];
 }
 
@@ -31,38 +31,18 @@ export const obfuscatePubKey = (address: string) => {
   );
 };
 
+export async function getSolBalance(walletPublicKey: PublicKey) {
+  let solBalance = 0;
+  try {
+    const connection = new Connection(
+      process.env.NEXT_PUBLIC_QNODE_RPC!,
+      "confirmed"
+    );
 
-export async function getTokenAccounts(
-  walletPublicKey: PublicKey,
-  connection: Connection
-) {
-  const filters = [
-    {
-      dataSize: 165,
-    },
-    {
-      memcmp: {
-        offset: 32,
-        bytes: walletPublicKey.toBase58(),
-      },
-    },
-  ];
-
-  const accounts = await connection.getParsedProgramAccounts(
-    TOKEN_PROGRAM_ID,
-    { filters: filters }
-  );
-
-  const results: TokenAccount[] = accounts.map((account) => {
-    const info = account.account.data as ParsedAccountData;
-    const mintAddress = info.parsed.info.mint;
-    // console.log(info.parsed);
-    const balance = info.parsed.info.tokenAmount.uiAmount || 0;
-
-    // console.log(`Token Mint: ${mintAddress}, Balance: ${balance}`);
-    return { mintAddress, balance };
-  });
-
-  return results;
+    solBalance =
+      (await connection.getBalance(walletPublicKey)) / LAMPORTS_PER_SOL;
+  } catch (e) {
+    console.error(e);
+  }
+  return solBalance;
 }
-

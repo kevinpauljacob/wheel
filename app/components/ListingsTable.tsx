@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Reward } from "../types/reward";
 import { useWallet } from "@solana/wallet-adapter-react";
+import Image from "next/image";
 
 const HazardIcon = () => (
   <svg
@@ -54,6 +55,7 @@ const NFTTable: React.FC = () => {
         <table className="min-w-full table-auto border-separate border-spacing-4">
           <thead>
             <tr className="text-left text-white/85 text-xs font-medium">
+              <th className="py-2">Image</th>
               <th className="py-2">Type</th>
               <th className="py-2">Name</th>
               <th className="py-2">Amount</th>
@@ -64,6 +66,17 @@ const NFTTable: React.FC = () => {
           <tbody>
             {rewards.map((item, index) => (
               <tr key={index} className="">
+                <td>
+                  <Image
+                    className="w-[40px] h-[40px] rounded-[5px]"
+                    src={item?.image ?? ""}
+                    alt={item?.name ?? ''}
+                    width={40}
+                    height={40}
+                    objectFit="cover"
+                  />
+                </td>
+
                 <td className="px-4 bg-[#202020]/65 text-white/35 font-medium text-xs rounded-[5px]">
                   {item.type}
                 </td>

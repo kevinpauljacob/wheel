@@ -27,9 +27,10 @@ import { publicKey } from "@metaplex-foundation/umi";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
   Assets,
+  Collection,
   NFT,
   TokenAccount,
-  getTokenAccounts,
+  getSolBalance,
   obfuscatePubKey,
 } from "@/utils/helpers";
 import { list } from "postcss";
@@ -37,8 +38,8 @@ import Image from "next/image";
 
 const Items: React.FC = () => {
   const wallet = useWallet();
-  const [activeTab, setActiveTab] = useState<"NFTs" | "cNFTs" | "Tokens">(
-    "NFTs"
+  const [activeTab, setActiveTab] = useState<"PNFT" | "CNFT" | "Tokens">(
+    "PNFT"
   );
   const [activeCollection, setActiveCollection] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -47,121 +48,133 @@ const Items: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
 
   const [assets, setAssets] = useState<Assets>({
-    NFTs: {},
-    cNFTs: {},
+    PNFT: {},
+    CNFT: {},
     Tokens: [],
   });
 
-  const handleTabChange = (tab: "NFTs" | "cNFTs" | "Tokens") => {
+  const handleTabChange = (tab: "PNFT" | "CNFT" | "Tokens") => {
     setActiveTab(tab);
     if (tab === "Tokens") {
       setActiveCollection(assets.Tokens[0]?.mintAddress);
     } else {
-      setActiveCollection(Object.keys(assets[tab])[0]);
+      setActiveCollection(Object.keys(assets[tab])[0] || "Others");
     }
     setSearchQuery("");
-  };
-
-  const fetchTokens = async () => {
-    if (!wallet.publicKey) return;
-
-    let tokens: TokenAccount[] = [];
-
-    try {
-      const connection = new Connection(
-        process.env.NEXT_PUBLIC_QNODE_RPC!,
-        "confirmed"
-      );
-
-      const walletBalance =
-        (await connection.getBalance(wallet.publicKey)) / LAMPORTS_PER_SOL;
-
-      const data = await getTokenAccounts(wallet.publicKey!, connection);
-      tokens = [
-        {
-          mintAddress: "SOL",
-          name: "SOL",
-          balance: walletBalance,
-        },
-        ...data,
-      ];
-    } catch (e) {
-      console.error(e);
-      return [];
-    }
-
-    return tokens;
-  };
-
-  const getImageFromUri = async (uri: string) => {
-    try {
-      const response = await fetch(uri);
-      const json = await response.json();
-      return json.image;
-    } catch (error) {
-      console.error("Error fetching image from URI:", error);
-      return null;
-    }
   };
 
   const getAssets = async () => {
     if (!wallet.publicKey) return;
 
-    const owner = publicKey(wallet.publicKey.toString());
-
-    const umi = createUmi(process.env.NEXT_PUBLIC_RPC!).use(mplTokenMetadata());
-    const assets: DigitalAsset[] = await fetchAllDigitalAssetWithTokenByOwner(
-      umi,
-      owner
+    const response = await fetch(
+      "https://mainnet.helius-rpc.com/?api-key=70d82569-44dd-44e4-9135-2c234ac26ff9",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: "text",
+          method: "getAssetsByOwner",
+          params: {
+            ownerAddress: wallet.publicKey.toString(),
+            page: 1,
+            limit: 100,
+            sortBy: {
+              sortBy: "created",
+              sortDirection: "asc",
+            },
+            options: {
+              showUnverifiedCollections: false,
+              showCollectionMetadata: true,
+              showGrandTotal: false,
+              showFungible: true,
+              showNativeBalance: false,
+              showInscription: true,
+              showZeroBalance: false,
+            },
+          },
+        }),
+      }
     );
+    const data = await response.json();
 
-    const tokens = await fetchTokens();
-    const collections: { [key: string]: any[] } = {};
-    const coins: TokenAccount[] = [];
+    console.log("helius", data);
 
-    await Promise.all(
-      assets.map(async (asset) => {
-        const imageUrl = await getImageFromUri(asset.metadata.uri);
+    const assetsData: any[] = data?.result?.items ?? [];
+    const tokens: TokenAccount[] = [];
+    const PNFTS: Collection = { Others: [] };
+    const CNFTS: Collection = { Others: [] };
 
-        if (asset.mint.decimals === 0) {
-          const collectionName = asset.metadata.name ?? "Others";
-
-          if (!collections[collectionName]) {
-            collections[collectionName] = [];
-          }
-
-          collections[collectionName].push({
-            name: asset.metadata.name ?? asset.publicKey,
-            image: imageUrl,
-            address: asset.publicKey,
-          });
-
-        } else if (
-          tokens &&
-          tokens.map((token) => token.mintAddress).includes(asset.publicKey)
+    assetsData.forEach((asset) => {
+      if (
+        asset?.interface === "FungibleToken" &&
+        asset?.id &&
+        asset?.token_info?.symbol &&
+        asset?.token_info?.price_info?.total_price
+      ) {
+        tokens.push({
+          mintAddress: asset.id,
+          name: asset.token_info.symbol,
+          balance: asset.token_info.price_info.total_price,
+          image: asset?.content?.links?.image ?? "",
+        });
+      } else if (
+        (asset?.interface === "ProgrammableNFT" ||
+          asset?.compression?.compressed) &&
+        asset?.id &&
+        asset?.content?.metadata?.name
+      ) {
+        console.log(
+          asset?.content?.metadata?.name,
+          asset?.compression?.compressed
+        );
+        let collection = "Others";
+        if (
+          asset?.grouping?.length > 0 &&
+          asset?.grouping[0]?.collection_metadata?.name
         ) {
-          coins.push({
-            mintAddress: asset.publicKey,
-            name: asset.metadata.name ?? asset.publicKey,
-            balance:
-              tokens.find((token) => token.mintAddress === asset.publicKey)
-                ?.balance ?? 0,
-          });
+          collection = asset?.grouping[0]?.collection_metadata?.name;
+          asset?.compression?.compressed
+            ? (CNFTS[collection] = [])
+            : (PNFTS[collection] = []);
         }
-      })
-    );
-
-    console.log("assets", assets);
-    console.log("tokens", tokens);
-    console.log("collections", collections);
-    
-    setAssets({
-      NFTs: collections,
-      cNFTs: {},
-      Tokens: coins,
+        const nft = {
+          name: asset.content.metadata.name,
+          address: asset.id,
+          image: asset?.content?.links?.image ?? "",
+          type: (asset?.compression?.compressed ? "CNFT" : "PNFT") as
+            | "PNFT"
+            | "CNFT",
+        };
+        asset?.compression?.compressed
+          ? CNFTS[collection].push(nft)
+          : PNFTS[collection].push(nft);
+      }
     });
 
-    setActiveCollection(Object.keys(collections)[0] || "Others");
+    const solBalance = await getSolBalance(wallet.publicKey);
+
+    tokens.push({
+      mintAddress: "SOL",
+      name: "SOL",
+      balance: solBalance,
+      image:
+        "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/8ezDtNNhX91t1NbSLe8xV2PcCEfoQjEm2qDVGjt3rjhg/SOL.svg",
+    });
+
+    console.log("nfts", PNFTS);
+    console.log("cnfts", CNFTS);
+    console.log("tokens", tokens);
+
+    setAssets({
+      PNFT: PNFTS,
+      CNFT: CNFTS,
+      Tokens: tokens,
+    });
+
+    setActiveCollection(Object.keys(PNFTS)[0] || "Others");
   };
 
   const list = async (type: string, address: string, nft?: NFT) => {
@@ -203,8 +216,9 @@ const Items: React.FC = () => {
   }, [wallet.publicKey]);
 
   if (
-    Object.keys(assets.NFTs).length === 0 &&
-    Object.keys(assets.NFTs).length === 0
+    Object.keys(assets.PNFT).length === 0 &&
+    Object.keys(assets.CNFT).length === 0 &&
+    assets.Tokens.length === 0
   )
     return <div></div>;
 
@@ -213,15 +227,13 @@ const Items: React.FC = () => {
       <div className="max-w-md p-4 bg-[#161616] min-h-[500px] rounded-xl">
         {/* Tab Header for NFTs, cNFTs, Tokens */}
         <div className="flex border-2 border-white/5 rounded-md p-2 mb-4">
-          {["NFTs", "cNFTs", "Tokens"].map((tab) => (
+          {["PNFT", "CNFT", "Tokens"].map((tab) => (
             <button
               key={tab}
               className={`px-4 py-2 rounded-md text-sm font-medium w-full ${
                 activeTab === tab ? "bg-[#202329] text-white" : "text-gray-400"
               }`}
-              onClick={() =>
-                handleTabChange(tab as "NFTs" | "cNFTs" | "Tokens")
-              }
+              onClick={() => handleTabChange(tab as "PNFT" | "CNFT" | "Tokens")}
             >
               {tab}
             </button>
@@ -281,7 +293,7 @@ const Items: React.FC = () => {
                 .map((nft: NFT) => (
                   <div
                     key={nft.address}
-                    className="mb-2 bg-[#141720] rounded-lg text-white h-max"
+                    className="mb-2 max-w-[120px] bg-[#141720] rounded-lg text-white h-max"
                   >
                     <Image
                       className="w-[120px] h-[120px] bg-[#F0DADA] rounded-[5px]"

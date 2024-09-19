@@ -4,7 +4,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "shdw-drive.genesysgo.net",
+        hostname: "**",
         pathname: "/**",
       },
     ],

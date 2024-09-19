@@ -16,7 +16,7 @@ export default function Hero() {
   const [wheelStyle, setWheelStyle] = useState({});
   const [spinData, setSpinData] = useState([]);
 
-  const imageWidth = 180; // Adjust this value based on your image width
+  const imageWidth = 150; // Adjust this value based on your image width
 
   // Function to fetch and set spin data
   const rewardData = async () => {
@@ -59,7 +59,7 @@ export default function Hero() {
     // Start the spin
     setWheelStyle({
       transition: "transform 4s ease-out",
-      transform: `translateX(-${finalPosition}px)`,
+      transform: `translateX(-${finalPosition - 20}px)`,
     });
 
     // Reset after spin ends

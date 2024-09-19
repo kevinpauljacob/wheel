@@ -4,58 +4,56 @@ import Lion from "/public/assets/bg-lion.svg";
 import Lion3 from "/public/assets/bg-lion3.png";
 import Circle from "/public/assets/bg-circle.svg";
 import Logo from "/public/assets/roulette-logo.svg";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Breakpoint from "/public/assets/breakpoint.svg";
 import Sol from "/public/assets/sol.svg";
 import DropDown from "/public/assets/dropdown.svg";
 
-import nft from "/public/assets/nft.svg";
-
+import altImage from "/public/assets/storeMyster.png";
 export default function Hero() {
   const [outcome, setOutcome] = useState("");
   const [isSpinning, setIsSpinning] = useState(false);
   const [wheelStyle, setWheelStyle] = useState({});
+  const [spinData, setSpinData] = useState([]);
 
-  const images = [
-    { id: 0, src: nft, name: "SMB #1167" },
-    { id: 1, src: nft, name: "SMB #1168" },
-    { id: 2, src: nft, name: "SMB #1169" },
-    { id: 3, src: nft, name: "SMB #1170" },
-    { id: 4, src: nft, name: "SMB #1171" },
-  ];
   const imageWidth = 177; // Adjust this value based on your image width
-  const totalImages = images.length;
 
-  // Duplicating the image array 3 times for smooth spinning
-  const extendedImages = [
-    ...images,
-    ...images,
-    ...images,
-    ...images,
-    ...images,
-    ...images,
-  ];
+  // Function to fetch and set spin data
+  const rewardData = async () => {
+    const res = await fetch("/api/rewards/list");
+    const data = await res.json();
+    const duplicatedImages = [];
+    const minImagesNeeded = 50;
+    const duplicationTimes = Math.ceil(minImagesNeeded / data.rewards.length);
+
+    for (let i = 0; i < duplicationTimes; i++) {
+      duplicatedImages.push(...data.rewards);
+    }
+
+    setSpinData(duplicatedImages);
+  };
+
+  useEffect(() => {
+    rewardData();
+  }, []);
 
   // Function to handle the spin
-  const spinWheel = (selectedId: any) => {
-    if (isSpinning) return;
-
-    const selectedIndex = images.findIndex(
+  const spinWheel = (selectedId) => {
+    if (isSpinning || !spinData.length) return;
+    /*   const selectedIndex = spinData.findIndex(
       (image) => image.id === parseInt(selectedId)
-    );
+    ); */
+    const selectedIndex = parseInt(selectedId);
     if (selectedIndex === -1) {
       alert("Invalid image ID");
       return;
     }
 
     setIsSpinning(true);
-
-    const totalSpins = 3; // Number of complete spins (adjust for longer/shorter animation)
+    const totalSpins = 1; // Number of complete spins
     const stopPosition =
-      (totalSpins * totalImages + selectedIndex) * imageWidth;
-
+      (totalSpins * spinData.length + selectedIndex) * imageWidth;
     const randomOffset = Math.floor(Math.random() * 100) - 50; // Add slight randomness
-
     const finalPosition = stopPosition + randomOffset;
 
     // Start the spin
@@ -67,6 +65,7 @@ export default function Hero() {
     // Reset after spin ends
     setTimeout(() => {
       setIsSpinning(false);
+      // Ensures the wheel stops on the exact image without the offset
       setWheelStyle({
         transition: "none",
         transform: `translateX(-${selectedIndex * imageWidth}px)`,
@@ -107,21 +106,21 @@ export default function Hero() {
               height={200}
             />
             <div className="flex" style={wheelStyle}>
-              {extendedImages.map((image, index) => (
+              {spinData.map((image, index) => (
                 <div
                   key={index}
                   className="bg-secondary rounded-2xl  lg:w-[177px] lg:h-[203px] flex-shrink-0 p-2.5 lg:p-4 mr-3"
                 >
                   <div className="relative mb-1 lg:mb-2 w-full">
                     <Image
-                      src={image.src}
-                      alt={`Image ${image.id}`}
+                      src={image.image || altImage}
+                      alt={`Image ${index}`}
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute top-0 text-[10px] lg:text-base bg-secondary text-primary border border-[#FFE072] rounded-md lg:rounded-lg px-1 lg:px-2 lg:py-0.5">
                       {index - 1}
                     </div>
-                    <h1>{image.name}</h1>
+                    <h1>{image?.name}</h1>
                   </div>
                 </div>
               ))}

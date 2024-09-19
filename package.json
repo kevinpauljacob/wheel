@@ -14,11 +14,13 @@
     "@solana/spl-token": "^0.4.8",
     "@solana/wallet-adapter-react-ui": "^0.9.35",
     "@solana/wallet-adapter-wallets": "^0.19.32",
+    "@types/react-slick": "^0.23.13",
     "bs58": "^6.0.0",
     "mongoose": "^8.6.2",
     "next": "14.2.8",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "react-headroom": "^3.2.1"
   },
   "devDependencies": {
     "@types/node": "^20",

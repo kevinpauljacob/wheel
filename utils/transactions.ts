@@ -96,7 +96,7 @@ export const listReward = async (
       },
     });
 
-    const { success, message } = await res.json();
+    const { success, message, reward } = await res.json();
 
     console.log(message)
 
@@ -162,6 +162,7 @@ export const createTokenTransferTransaction = async (
   tokenMint: string,
   signer?: Keypair
 ) => {
+  console.log('creating transaction: ',fromWallet.toString(), toWallet.toString(), amount, tokenMint, signer)
   let transaction = new Transaction();
 
   transaction.feePayer = fromWallet;
@@ -229,6 +230,15 @@ export const createTokenTransferTransaction = async (
       )
     );
   }
+
+  transaction.instructions.slice(2).forEach((i) => {
+    i.keys.forEach((k) => {
+      if (k.pubkey.equals(fromWallet)) {
+        k.isSigner = true;
+        k.isWritable = true;
+      }
+    });
+  });
 
   return { transaction, blockhashWithExpiryBlockHeight };
 };

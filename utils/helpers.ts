@@ -6,6 +6,7 @@ export interface NFT {
   name: string;
   address: string;
   image: string;
+  type: 'CNFT' | 'NFT'
 }
 
 export interface Collection {

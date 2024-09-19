@@ -76,7 +76,6 @@ const Items: React.FC = () => {
         (await connection.getBalance(wallet.publicKey)) / LAMPORTS_PER_SOL;
 
       const data = await getTokenAccounts(wallet.publicKey!, connection);
-      console.log("data", data);
       tokens = [
         {
           mintAddress: "SOL",
@@ -98,76 +97,95 @@ const Items: React.FC = () => {
 
     const owner = publicKey(wallet.publicKey.toString());
 
-    // const umi = createUmi(process.env.NEXT_PUBLIC_RPC!).use(mplTokenMetadata());
-    // const assets: DigitalAsset[] = await fetchAllDigitalAssetByOwner(
-    //   umi,
-    //   owner
-    // );
+    const umi = createUmi(process.env.NEXT_PUBLIC_RPC!).use(mplTokenMetadata());
+    const assets: DigitalAsset[] = await fetchAllDigitalAssetWithTokenByOwner(
+      umi,
+      owner
+    );
 
     const tokens = await fetchTokens();
 
-    // console.log("assets", assets);
-    // console.log("tokens", tokens);
+    console.log("assets", assets);
+    console.log("tokens", tokens);
 
-    // const nfts: NFT[] = [];
-    // const coins: TokenAccount[] = [];
+    const nfts: NFT[] = [];
+    const coins: TokenAccount[] = [];
 
-    // assets.forEach((asset) => {
-    //   if (asset.mint.decimals === 0)
-    //     nfts.push({
-    //       //@ts-ignore
-    //       name: asset?.metadata?.name ?? asset.publicKey,
-    //       image: "",
-    //       address: asset.publicKey,
-    //     });
-    //   else if (
-    //     tokens &&
-    //     tokens.map((token) => token.mintAddress).includes(asset?.publicKey)
-    //   )
-    //     coins.push({
-    //       mintAddress: asset.publicKey,
-    //       //@ts-ignore
-    //       name: asset?.metadata?.name ?? asset.publicKey,
-    //       balance:
-    //         tokens.find((token) => token.mintAddress === asset.publicKey)
-    //           ?.balance ?? 0,
-    //     });
-    // });
+    coins.push(
+      tokens?.find((token) => token.mintAddress === "SOL") ??
+        ({} as TokenAccount)
+    );
 
-    console.log("coins", tokens);
+    assets.forEach((asset) => {
+      if (asset.mint.decimals === 0)
+        nfts.push({
+          //@ts-ignore
+          name: asset?.metadata?.name ?? asset.publicKey,
+          image: "",
+          address: asset.publicKey,
+          type: "NFT",
+        });
+      else if (
+        tokens &&
+        tokens.map((token) => token.mintAddress).includes(asset?.publicKey)
+      )
+        coins.push({
+          mintAddress: asset.publicKey,
+          //@ts-ignore
+          name: asset?.metadata?.symbol ?? asset.publicKey,
+          balance:
+            tokens.find((token) => token.mintAddress === asset.publicKey)
+              ?.balance ?? 0,
+        });
+    });
+
+    console.log("coins", coins);
 
     setAssets({
       NFTs: {
-        Others: [],
+        Others: nfts,
       },
       cNFTs: {},
-      Tokens: tokens!,
+      Tokens: coins,
     });
     setActiveCollection("Others");
   };
 
-  const list = async (type: string, address: string) => {
+  const list = async (type: string, address: string, nft?: NFT) => {
     setLoading(true);
     console.log(type, address, amount);
-    if (type && address && amount && amount > 0) {
-      const response = await listReward(
-        wallet,
-        address,
-        type,
-        name,
-        "",
-        amount
-      );
-
-      console.log(response);
+    let rewardAmount = amount;
+    let rewardImage = "";
+    let rewardName = name;
+    if (!type || !address) return;
+    if (
+      (type === "TOKEN" || type === "SOL") &&
+      (!rewardAmount || rewardAmount <= 0 || !name || name.length <= 0)
+    )
+      return;
+    if (type === "NFT") {
+      if (!nft) return;
+      rewardImage = nft.image;
+      rewardName = nft.name;
+      rewardAmount = 1;
     }
+    const response = await listReward(
+      wallet,
+      address,
+      type,
+      rewardName,
+      rewardImage,
+      rewardAmount
+    );
+
+    console.log(response);
+
     setLoading(false);
   };
 
   useEffect(() => {
     if (wallet.publicKey) {
       getAssets();
-      // fetchTokens();
     }
   }, [wallet.publicKey]);
 
@@ -255,7 +273,12 @@ const Items: React.FC = () => {
                     <div className="w-[120px] h-[120px] bg-[#F0DADA] rounded-[5px]"></div>
                     <div className="flex flex-col gap-2 p-2">
                       <p className="text-xs text-[#94A3B8]">{nft.name}</p>
-                      <button className="text-xs bg-[#726CFB] rounded-[5px] py-1">
+                      <button
+                        onClick={() => {
+                          list(nft.type, nft.address, nft);
+                        }}
+                        className="text-xs bg-[#726CFB] rounded-[5px] py-1"
+                      >
                         List
                       </button>
                     </div>

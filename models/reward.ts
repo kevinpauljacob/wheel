@@ -39,6 +39,7 @@ const rewardSchema = new mongoose.Schema(
     game: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Game",
+      sparse: true,
       unique: true
     },
     txnSignature: {

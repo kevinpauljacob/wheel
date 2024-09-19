@@ -1,23 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { Reward } from "../types/reward";
+import { useWallet } from "@solana/wallet-adapter-react";
 
-// Define the type for the NFT item
-interface NFTItem {
-  type: string;
-  name: string;
-  amount: string;
-  probability: string;
-}
-
-// Dummy array of NFTs
-const nftList: NFTItem[] = [
-  { type: "NFT", name: "Degods #123", amount: "01", probability: "30%" },
-  { type: "cNFT", name: "Degods #345", amount: "01", probability: "30%" },
-  { type: "Token", name: "$SOL", amount: "100", probability: "40%" },
-  { type: "NFT", name: "Degods #567", amount: "01", probability: "35%" },
-  { type: "cNFT", name: "Degods #789", amount: "01", probability: "25%" },
-];
-
-// Hazard Icon SVG as a React component
 const HazardIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -36,10 +20,33 @@ const HazardIcon = () => (
 );
 
 const NFTTable: React.FC = () => {
-  // Calculate the total probability as a number
-  const totalProbability = nftList.reduce((sum, nft) => {
-    return sum + parseFloat(nft.probability.replace("%", ""));
+  const wallet = useWallet();
+  const [rewards, setRewards] = useState<Reward[]>([]);
+
+  const totalProbability = rewards.reduce((sum, nft) => {
+    return sum + nft.probability;
   }, 0);
+
+  const getRewards = async () => {
+    const response = await (
+      await fetch("/api/rewards/list", {
+        method: "POST",
+        body: JSON.stringify({
+          wallet: wallet.publicKey?.toString(),
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+    ).json();
+    console.log(response);
+    if (response?.success) setRewards(response?.rewards ?? []);
+    else console.error("Failed to fetch rewards");
+  };
+
+  useEffect(() => {
+    if (wallet.publicKey) getRewards();
+  }, [wallet.publicKey]);
 
   return (
     <>
@@ -55,7 +62,7 @@ const NFTTable: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {nftList.map((item, index) => (
+            {rewards.map((item, index) => (
               <tr key={index} className="">
                 <td className="px-4 bg-[#202020]/65 text-white/35 font-medium text-xs rounded-[5px]">
                   {item.type}

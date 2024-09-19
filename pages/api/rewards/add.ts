@@ -105,9 +105,6 @@ export default async function handler(
         message: "In dev",
       });
 
-    console.log(transaction);
-    console.log("Vtxn: ", verificationTransaction);
-
     if (!verifyTransaction(transaction, verificationTransaction))
       return res.status(400).json({
         success: false,

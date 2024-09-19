@@ -33,6 +33,7 @@ import {
   obfuscatePubKey,
 } from "@/utils/helpers";
 import { list } from "postcss";
+import Image from "next/image";
 
 const Items: React.FC = () => {
   const wallet = useWallet();
@@ -92,6 +93,17 @@ const Items: React.FC = () => {
     return tokens;
   };
 
+  const getImageFromUri = async (uri: string) => {
+    try {
+      const response = await fetch(uri);
+      const json = await response.json();
+      return json.image;
+    } catch (error) {
+      console.error("Error fetching image from URI:", error);
+      return null;
+    }
+  };
+
   const getAssets = async () => {
     if (!wallet.publicKey) return;
 
@@ -104,51 +116,52 @@ const Items: React.FC = () => {
     );
 
     const tokens = await fetchTokens();
+    const collections: { [key: string]: any[] } = {};
+    const coins: TokenAccount[] = [];
+
+    await Promise.all(
+      assets.map(async (asset) => {
+        const imageUrl = await getImageFromUri(asset.metadata.uri);
+
+        if (asset.mint.decimals === 0) {
+          const collectionName = asset.metadata.name ?? "Others";
+
+          if (!collections[collectionName]) {
+            collections[collectionName] = [];
+          }
+
+          collections[collectionName].push({
+            name: asset.metadata.name ?? asset.publicKey,
+            image: imageUrl,
+            address: asset.publicKey,
+          });
+
+        } else if (
+          tokens &&
+          tokens.map((token) => token.mintAddress).includes(asset.publicKey)
+        ) {
+          coins.push({
+            mintAddress: asset.publicKey,
+            name: asset.metadata.name ?? asset.publicKey,
+            balance:
+              tokens.find((token) => token.mintAddress === asset.publicKey)
+                ?.balance ?? 0,
+          });
+        }
+      })
+    );
 
     console.log("assets", assets);
     console.log("tokens", tokens);
-
-    const nfts: NFT[] = [];
-    const coins: TokenAccount[] = [];
-
-    coins.push(
-      tokens?.find((token) => token.mintAddress === "SOL") ??
-        ({} as TokenAccount)
-    );
-
-    assets.forEach((asset) => {
-      if (asset.mint.decimals === 0)
-        nfts.push({
-          //@ts-ignore
-          name: asset?.metadata?.name ?? asset.publicKey,
-          image: "",
-          address: asset.publicKey,
-          type: "NFT",
-        });
-      else if (
-        tokens &&
-        tokens.map((token) => token.mintAddress).includes(asset?.publicKey)
-      )
-        coins.push({
-          mintAddress: asset.publicKey,
-          //@ts-ignore
-          name: asset?.metadata?.symbol ?? asset.publicKey,
-          balance:
-            tokens.find((token) => token.mintAddress === asset.publicKey)
-              ?.balance ?? 0,
-        });
-    });
-
-    console.log("coins", coins);
-
+    console.log("collections", collections);
+    
     setAssets({
-      NFTs: {
-        Others: nfts,
-      },
+      NFTs: collections,
       cNFTs: {},
       Tokens: coins,
     });
-    setActiveCollection("Others");
+
+    setActiveCollection(Object.keys(collections)[0] || "Others");
   };
 
   const list = async (type: string, address: string, nft?: NFT) => {
@@ -258,7 +271,7 @@ const Items: React.FC = () => {
         </div>
         {activeTab !== "Tokens" ? (
           <div className="flex flex-wrap gap-2">
-            {assets[activeTab][activeCollection].filter((nft: NFT) =>
+            {assets[activeTab][activeCollection]?.filter((nft: NFT) =>
               nft.name.toLowerCase().includes(searchQuery.toLowerCase())
             ).length > 0 ? (
               assets[activeTab][activeCollection]
@@ -270,7 +283,14 @@ const Items: React.FC = () => {
                     key={nft.address}
                     className="mb-2 bg-[#141720] rounded-lg text-white h-max"
                   >
-                    <div className="w-[120px] h-[120px] bg-[#F0DADA] rounded-[5px]"></div>
+                    <Image
+                      className="w-[120px] h-[120px] bg-[#F0DADA] rounded-[5px]"
+                      src={nft.image}
+                      alt={nft.name}
+                      width={120}
+                      height={120}
+                      objectFit="cover"
+                    />
                     <div className="flex flex-col gap-2 p-2">
                       <p className="text-xs text-[#94A3B8]">{nft.name}</p>
                       <button

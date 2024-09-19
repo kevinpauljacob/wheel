@@ -25,27 +25,24 @@ body {
   }
 }
 
-.wheel {
-  display: flex;
-  will-change: transform;
-  /* Other necessary styles */
+
+
+.fadeInDown {
+  animation: fadeInDown 0.8s ease forwards;
 }
 
-
-
-
-
-
-@keyframes spinWheel {
-  from {
-    transform: translateX(var(--start-position));
+@keyframes fadeOutDown {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
   }
-  to {
-    transform: translateX(var(--end-position));
+
+  100% {
+    opacity: 0;
+    transform: translateY(20px);
   }
 }
 
-/* Animation class to trigger the spin */
-.spinning {
-  animation: spinWheel var(--animation-duration) cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+.fadeOutDown {
+  animation: fadeOutDown 0.8s ease forwards;
 }

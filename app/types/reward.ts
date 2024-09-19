@@ -1,4 +1,5 @@
 export interface Reward {
+  _id: string;
   address: string;
   type: RewardType;
   name: string;

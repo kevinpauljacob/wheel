@@ -5,7 +5,6 @@ import {
   Transaction,
   SystemProgram,
   Keypair,
-  sendAndConfirmRawTransaction,
   ComputeBudgetProgram,
   VersionedTransaction,
   BlockhashWithExpiryBlockHeight,
@@ -14,28 +13,100 @@ import {
   getAssociatedTokenAddressSync,
   getOrCreateAssociatedTokenAccount,
   transfer,
+  getAssociatedTokenAddress,
+  createAssociatedTokenAccountIdempotentInstruction,
+  createTransferInstruction,
 } from "@solana/spl-token";
 import { Metaplex, walletAdapterIdentity } from "@metaplex-foundation/js";
 import { Reward } from "@/app/types/reward";
 
-const connection = new Connection(process.env.NEXT_PUBLIC_RPC!);
-const metaplex = new Metaplex(connection);
+export const connection = new Connection(
+  process.env.NEXT_PUBLIC_QNODE_RPC!,
+  "confirmed"
+);
 
-const devWalletPublicKey = new PublicKey(process.env.NEXT_PUBLIC_DEV_PUBKEY!);
+const devWalletPublicKey = new PublicKey(
+  process.env.NEXT_PUBLIC_DEV_PUBLIC_KEY!
+);
 
 export const getRandomReward = (rewards: Reward[]): Reward => {
-  let randomNumber = Math.random() * 100;
-  let currentProbability = 0;
+  const randomNumber = Math.random() * 100;
+  let cumulativeProbability = 0;
+  const candidateRewards: Reward[] = [];
 
-  for (const option of rewards) {
-    currentProbability += option.probability;
-    if (randomNumber < currentProbability) {
-      return option;
+  for (const reward of rewards) {
+    cumulativeProbability += reward.probability;
+    if (randomNumber <= cumulativeProbability) {
+      candidateRewards.push(reward);
+      if (randomNumber < cumulativeProbability) break;
     }
   }
 
-  // fallback
-  return rewards[rewards.length - 1];
+  if (candidateRewards.length === 0) {
+    throw new Error("No reward selected. Check if probabilities sum to 100.");
+  }
+
+  return candidateRewards[Math.floor(Math.random() * candidateRewards.length)];
+};
+
+export const listReward = async (
+  wallet: WalletContextState,
+  address: string,
+  type: string,
+  name: string,
+  image: string,
+  amount: number
+) => {
+  try {
+    if (!wallet.publicKey) throw new Error("Wallet not connected");
+
+    const walletId = wallet.publicKey;
+    let transaction, blockhashWithExpiryBlockHeight;
+    if (type === "SOL" || type === "TOKEN") {
+      const transferInstruction = await createTokenTransferTransaction(
+        walletId,
+        devWalletPublicKey,
+        amount,
+        address
+      );
+      transaction = transferInstruction.transaction;
+      blockhashWithExpiryBlockHeight =
+        transferInstruction.blockhashWithExpiryBlockHeight;
+    } else return { success: false, message: "In dev" };
+
+    const signedTxn = await wallet.signTransaction!(transaction);
+    const transactionBase64 = signedTxn
+      .serialize({ requireAllSignatures: false })
+      .toString("base64");
+
+    const res = await fetch(`/api/rewards/add`, {
+      method: "POST",
+      body: JSON.stringify({
+        wallet: walletId.toBase58(),
+        address,
+        type,
+        name,
+        image,
+        amount,
+        transactionBase64,
+        blockhashWithExpiryBlockHeight,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const { success, message } = await res.json();
+
+    console.log(message)
+
+    if (!success) throw new Error(message);
+
+    return { success: true, message };
+  } catch (error: any) {
+    console.log(error);
+    return { success: false, message: error?.message ?? "Listing failed" };
+  }
 };
 
 export const playWheelGame = async (
@@ -48,14 +119,18 @@ export const playWheelGame = async (
     const walletId = wallet.publicKey;
 
     let { transaction, blockhashWithExpiryBlockHeight } =
-      await createPaymentTransaction(walletId, devWalletPublicKey, amount);
+      await createTokenTransferTransaction(
+        walletId,
+        devWalletPublicKey,
+        amount,
+        "SOL"
+      );
 
     const signedTxn = await wallet.signTransaction!(transaction);
     const transactionBase64 = signedTxn
       .serialize({ requireAllSignatures: false })
       .toString("base64");
 
-    // Send transaction to backend for processing
     const res = await fetch(`/api/playGame`, {
       method: "POST",
       body: JSON.stringify({
@@ -76,113 +151,86 @@ export const playWheelGame = async (
     return { success: true, reward };
   } catch (error: any) {
     console.log(error);
-    return { success: false, error: error.message };
+    return { success: false, message: error?.message };
   }
 };
 
-export const createPaymentTransaction = async (
-  fromPubkey: PublicKey,
-  toPubkey: PublicKey,
-  amount: number
+export const createTokenTransferTransaction = async (
+  fromWallet: PublicKey,
+  toWallet: PublicKey,
+  amount: number,
+  tokenMint: string,
+  signer?: Keypair
 ) => {
   let transaction = new Transaction();
+
+  transaction.feePayer = fromWallet;
   const blockhashWithExpiryBlockHeight = await connection.getLatestBlockhash();
-  transaction.feePayer = fromPubkey;
   transaction.recentBlockhash = blockhashWithExpiryBlockHeight.blockhash;
 
   transaction.add(
-    SystemProgram.transfer({
-      lamports: Math.floor(amount * 1e9),
-      fromPubkey,
-      toPubkey,
-    })
+    ComputeBudgetProgram.setComputeUnitLimit({ units: 100_000 }),
+    ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 150_000 })
   );
+
+  if (tokenMint === "SOL") {
+    transaction.add(
+      SystemProgram.transfer({
+        fromPubkey: fromWallet,
+        toPubkey: toWallet,
+        lamports: Math.floor(amount * Math.pow(10, 9)),
+      })
+    );
+  } else {
+    const decimal = 6; // assuming usdc usdt
+    const tokenId = new PublicKey(tokenMint);
+    let fromAta;
+    let toAta;
+    if (signer) {
+      fromAta = (
+        await getOrCreateAssociatedTokenAccount(
+          connection,
+          signer,
+          tokenId,
+          fromWallet,
+          false,
+          "processed",
+          { commitment: "confirmed" }
+        )
+      ).address;
+      toAta = (
+        await getOrCreateAssociatedTokenAccount(
+          connection,
+          signer,
+          tokenId,
+          toWallet,
+          false,
+          "processed",
+          { commitment: "confirmed" }
+        )
+      ).address;
+    } else {
+      fromAta = await getAssociatedTokenAddress(tokenId, fromWallet);
+      toAta = await getAssociatedTokenAddress(tokenId, toWallet);
+    }
+
+    transaction.add(
+      createAssociatedTokenAccountIdempotentInstruction(
+        fromWallet,
+        toAta,
+        toWallet,
+        tokenId
+      ),
+      createTransferInstruction(
+        fromAta,
+        toAta,
+        fromWallet,
+        Math.floor(amount * Math.pow(10, decimal))
+      )
+    );
+  }
 
   return { transaction, blockhashWithExpiryBlockHeight };
-};
-
-export const sendRewardToUser = async (
-  reward: Reward,
-  userPublicKey: PublicKey,
-  devWallet: Keypair
-) => {
-  switch (reward.type) {
-    case "SOL":
-      return sendSolReward(reward, userPublicKey, devWallet);
-    case "TOKEN":
-      return sendTokenReward(reward, userPublicKey, devWallet);
-    case "CNFT":
-    case "PNFT":
-      return sendNFTReward(reward, userPublicKey, devWallet);
-    default:
-      throw new Error("Unknown reward type");
-  }
-};
-
-const sendSolReward = async (
-  reward: Reward,
-  userPublicKey: PublicKey,
-  devWallet: Keypair
-) => {
-  const rewardTxn = new Transaction();
-  rewardTxn.feePayer = devWallet.publicKey;
-  rewardTxn.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-
-  rewardTxn.add(
-    SystemProgram.transfer({
-      lamports: Math.floor(reward.amount * 1e9),
-      fromPubkey: devWallet.publicKey,
-      toPubkey: userPublicKey,
-    })
-  );
-
-  rewardTxn.sign(devWallet);
-  await sendAndConfirmRawTransaction(connection, rewardTxn.serialize(), {
-    commitment: "confirmed",
-  });
-};
-
-const sendTokenReward = async (
-  reward: Reward,
-  userPublicKey: PublicKey,
-  devWallet: Keypair
-) => {
-  if (!reward.address) throw new Error("Token address not provided");
-
-  const rewardPublicKey = new PublicKey(reward.address);
-
-  const sourceAcc = (
-    await getOrCreateAssociatedTokenAccount(
-      connection,
-      devWallet,
-      rewardPublicKey,
-      devWallet.publicKey,
-      false,
-      "processed",
-      { commitment: "confirmed" }
-    )
-  ).address;
-
-  const destAcc = (
-    await getOrCreateAssociatedTokenAccount(
-      connection,
-      devWallet,
-      rewardPublicKey,
-      userPublicKey,
-      false,
-      "processed",
-      { commitment: "confirmed" }
-    )
-  ).address;
-
-  await transfer(
-    connection,
-    devWallet,
-    sourceAcc,
-    destAcc,
-    devWallet.publicKey,
-    reward.amount * 1e9 // Assuming 9 decimals, adjust if different
-  );
 };
 
 const sendNFTReward = async (
@@ -228,7 +276,7 @@ export const verifyTransaction = (
   console.log(transactionInstructions);
   console.log(vTransactionInstructions);
 
-  return transactionInstructions !== vTransactionInstructions;
+  return transactionInstructions === vTransactionInstructions;
 };
 
 export async function retryTxn(

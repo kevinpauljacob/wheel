@@ -24,7 +24,9 @@ export default function ConnectWallet() {
       {(!wallet.publicKey || wallet.connecting) && (
         <div
           onClick={() => {
+            console.log('clicked')
             if (!wallet.connected) {
+              console.log('connected')
               walletModal.setVisible(true);
             }
           }}

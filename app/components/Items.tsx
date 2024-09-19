@@ -1,73 +1,181 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-
-// Define types for NFT, cNFT, and Token
-interface NFT {
-  id: number;
-  name: string;
-}
-
-interface Collection {
-  [collectionName: string]: NFT[];
-}
-
-interface Token {
-  name: string;
-}
-
-interface Collections {
-  NFTs: Collection;
-  cNFTs: Collection;
-  Tokens: Token[];
-}
-
-// The collections object with proper typing
-const collections: Collections = {
-  NFTs: {
-    Yoots: [
-      { id: 1, name: "Yoot #1" },
-      { id: 2, name: "Yoot #2" },
-      { id: 3, name: "Yoot #3" },
-    ],
-    Degods: [
-      { id: 4, name: "Degod #1" },
-      { id: 5, name: "Degod #2" },
-      { id: 6, name: "Degod #3" },
-    ],
-  },
-  cNFTs: {
-    "C-Yoots": [
-      { id: 7, name: "C-Yoot #1" },
-      { id: 8, name: "C-Yoot #2" },
-    ],
-    "C-Degods": [
-      { id: 9, name: "C-Degod #1" },
-      { id: 10, name: "C-Degod #2" },
-    ],
-  },
-  Tokens: [{ name: "$SOL" }, { name: "$ETH" }],
-};
+import {
+  Metaplex,
+  walletAdapterIdentity,
+  OperationOptions,
+  FindNftsByOwnerInput,
+  PublicKey,
+} from "@metaplex-foundation/js";
+import {
+  Connection,
+  clusterApiUrl,
+  ParsedAccountData,
+  LAMPORTS_PER_SOL,
+} from "@solana/web3.js";
+import { connection, listReward } from "@/utils/transactions";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import {
+  DigitalAsset,
+  mplTokenMetadata,
+} from "@metaplex-foundation/mpl-token-metadata";
+import {
+  fetchAllDigitalAssetByOwner,
+  fetchAllDigitalAssetWithTokenByOwner,
+} from "@metaplex-foundation/mpl-token-metadata";
+import { publicKey } from "@metaplex-foundation/umi";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import {
+  Assets,
+  NFT,
+  TokenAccount,
+  getTokenAccounts,
+  obfuscatePubKey,
+} from "@/utils/helpers";
+import { list } from "postcss";
 
 const Items: React.FC = () => {
   const wallet = useWallet();
   const [activeTab, setActiveTab] = useState<"NFTs" | "cNFTs" | "Tokens">(
     "NFTs"
   );
-  const [activeCollection, setActiveCollection] = useState<string>(
-    Object.keys(collections.NFTs)[0]
-  );
+  const [activeCollection, setActiveCollection] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [amount, setAmount] = useState<string>("");
+  const [amount, setAmount] = useState<number>(0);
+  const [name, setName] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const [assets, setAssets] = useState<Assets>({
+    NFTs: {},
+    cNFTs: {},
+    Tokens: [],
+  });
 
   const handleTabChange = (tab: "NFTs" | "cNFTs" | "Tokens") => {
     setActiveTab(tab);
     if (tab === "Tokens") {
-      setActiveCollection(collections.Tokens[0].name); // Set the first token by default
+      setActiveCollection(assets.Tokens[0]?.mintAddress);
     } else {
-      setActiveCollection(Object.keys(collections[tab])[0]);
+      setActiveCollection(Object.keys(assets[tab])[0]);
     }
-    setSearchQuery(""); // Clear search when tab changes
+    setSearchQuery("");
   };
+
+  const fetchTokens = async () => {
+    if (!wallet.publicKey) return;
+
+    let tokens: TokenAccount[] = [];
+
+    try {
+      const connection = new Connection(
+        process.env.NEXT_PUBLIC_QNODE_RPC!,
+        "confirmed"
+      );
+
+      const walletBalance =
+        (await connection.getBalance(wallet.publicKey)) / LAMPORTS_PER_SOL;
+
+      const data = await getTokenAccounts(wallet.publicKey!, connection);
+      console.log("data", data);
+      tokens = [
+        {
+          mintAddress: "SOL",
+          name: "SOL",
+          balance: walletBalance,
+        },
+        ...data,
+      ];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+
+    return tokens;
+  };
+
+  const getAssets = async () => {
+    if (!wallet.publicKey) return;
+
+    const owner = publicKey(wallet.publicKey.toString());
+
+    // const umi = createUmi(process.env.NEXT_PUBLIC_RPC!).use(mplTokenMetadata());
+    // const assets: DigitalAsset[] = await fetchAllDigitalAssetByOwner(
+    //   umi,
+    //   owner
+    // );
+
+    const tokens = await fetchTokens();
+
+    // console.log("assets", assets);
+    // console.log("tokens", tokens);
+
+    // const nfts: NFT[] = [];
+    // const coins: TokenAccount[] = [];
+
+    // assets.forEach((asset) => {
+    //   if (asset.mint.decimals === 0)
+    //     nfts.push({
+    //       //@ts-ignore
+    //       name: asset?.metadata?.name ?? asset.publicKey,
+    //       image: "",
+    //       address: asset.publicKey,
+    //     });
+    //   else if (
+    //     tokens &&
+    //     tokens.map((token) => token.mintAddress).includes(asset?.publicKey)
+    //   )
+    //     coins.push({
+    //       mintAddress: asset.publicKey,
+    //       //@ts-ignore
+    //       name: asset?.metadata?.name ?? asset.publicKey,
+    //       balance:
+    //         tokens.find((token) => token.mintAddress === asset.publicKey)
+    //           ?.balance ?? 0,
+    //     });
+    // });
+
+    console.log("coins", tokens);
+
+    setAssets({
+      NFTs: {
+        Others: [],
+      },
+      cNFTs: {},
+      Tokens: tokens!,
+    });
+    setActiveCollection("Others");
+  };
+
+  const list = async (type: string, address: string) => {
+    setLoading(true);
+    console.log(type, address, amount);
+    if (type && address && amount && amount > 0) {
+      const response = await listReward(
+        wallet,
+        address,
+        type,
+        name,
+        "",
+        amount
+      );
+
+      console.log(response);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (wallet.publicKey) {
+      getAssets();
+      // fetchTokens();
+    }
+  }, [wallet.publicKey]);
+
+  if (
+    Object.keys(assets.NFTs).length === 0 &&
+    Object.keys(assets.NFTs).length === 0
+  )
+    return <div></div>;
 
   return (
     <div className="flex gap-8">
@@ -90,9 +198,9 @@ const Items: React.FC = () => {
         </div>
 
         {/* Collection Tabs for the selected category */}
-        <div className="flex flex-col gap-2 mb-4">
+        <div className="flex flex-col gap-2 mb-4 max-h-[40vh] overflow-y-auto">
           {activeTab !== "Tokens"
-            ? Object.keys(collections[activeTab]).map((collectionName) => (
+            ? Object.keys(assets[activeTab]).map((collectionName) => (
                 <button
                   key={collectionName}
                   className={`p-6 rounded-md text-sm font-medium ${
@@ -105,17 +213,17 @@ const Items: React.FC = () => {
                   {collectionName}
                 </button>
               ))
-            : collections.Tokens.map((token, index) => (
+            : assets.Tokens.map((token, index) => (
                 <button
                   key={index}
                   className={`p-6 rounded-md text-sm font-medium ${
-                    activeCollection === token.name
+                    activeCollection === token.mintAddress
                       ? "bg-white/10 text-white"
                       : "bg-[#FFFFFF08] text-gray-400"
                   }`}
-                  onClick={() => setActiveCollection(token.name)}
+                  onClick={() => setActiveCollection(token.mintAddress)}
                 >
-                  {token.name}
+                  {token?.name ?? obfuscatePubKey(token.mintAddress)}
                 </button>
               ))}
         </div>
@@ -132,16 +240,16 @@ const Items: React.FC = () => {
         </div>
         {activeTab !== "Tokens" ? (
           <div className="flex flex-wrap gap-2">
-            {collections[activeTab][activeCollection].filter((nft: NFT) =>
+            {assets[activeTab][activeCollection].filter((nft: NFT) =>
               nft.name.toLowerCase().includes(searchQuery.toLowerCase())
             ).length > 0 ? (
-              collections[activeTab][activeCollection]
+              assets[activeTab][activeCollection]
                 .filter((nft: NFT) =>
                   nft.name.toLowerCase().includes(searchQuery.toLowerCase())
                 )
                 .map((nft: NFT) => (
                   <div
-                    key={nft.id}
+                    key={nft.address}
                     className="mb-2 bg-[#141720] rounded-lg text-white h-max"
                   >
                     <div className="w-[120px] h-[120px] bg-[#F0DADA] rounded-[5px]"></div>
@@ -188,24 +296,23 @@ const Items: React.FC = () => {
             </div>
             <div className="mb-4">
               <label
-                className="block text-xs font-medium mb-1"
-                htmlFor="amount"
+                className="flex items-center justify-between text-xs font-medium mb-1 "
+                htmlFor="name"
               >
-                Amount
+                Reward Name
               </label>
               <div className="group flex h-11 w-full cursor-pointer items-center rounded-[8px] bg-[#202329] pl-4 pr-2.5">
                 <input
-                  id="amount"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  type={"number"}
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  type={"text"}
                   lang="en"
-                  step={"any"}
                   autoComplete="off"
-                  placeholder={"00.00"}
+                  placeholder={"Reward"}
                   className={`flex w-full min-w-0 bg-transparent text-sm text-[#94A3B8] placeholder-[#94A3B8]  placeholder-opacity-40 outline-none`}
                 />
-                <span
+                {/* <span
                   className="text-xs font-medium text-white text-opacity-50 bg-[#292C32] hover:bg-[#47484A] focus:bg-[#47484A] transition-all rounded-[5px] py-1.5 px-4"
                   // onClick={() => {
                   //   let bal = 0;
@@ -222,12 +329,72 @@ const Items: React.FC = () => {
                   // }}
                 >
                   Max
-                </span>
+                </span> */}
+              </div>
+            </div>
+            <div className="mb-4">
+              <label
+                className="flex items-center justify-between text-xs font-medium mb-1 "
+                htmlFor="amount"
+              >
+                <div>Amount</div>
+                <div>
+                  Available:{" "}
+                  {assets.Tokens.find(
+                    (token) => token.mintAddress === activeCollection
+                  )?.balance ?? 0}
+                </div>
+              </label>
+              <div className="group flex h-11 w-full cursor-pointer items-center rounded-[8px] bg-[#202329] pl-4 pr-2.5">
+                <input
+                  id="amount"
+                  value={amount}
+                  onChange={(e) => setAmount(parseFloat(e?.target?.value ?? 0))}
+                  type={"number"}
+                  lang="en"
+                  step={"any"}
+                  autoComplete="off"
+                  placeholder={"00.00"}
+                  className={`flex w-full min-w-0 bg-transparent text-sm text-[#94A3B8] placeholder-[#94A3B8]  placeholder-opacity-40 outline-none`}
+                />
+                {/* <span
+                  className="text-xs font-medium text-white text-opacity-50 bg-[#292C32] hover:bg-[#47484A] focus:bg-[#47484A] transition-all rounded-[5px] py-1.5 px-4"
+                  // onClick={() => {
+                  //   let bal = 0;
+                  //   if (coinData) {
+                  //     let token = coinData.find(
+                  //       (coin) =>
+                  //         coin?.tokenMint &&
+                  //         coin?.tokenMint === selectedToken?.tokenMint
+                  //     );
+                  //     if (token) bal = token?.amount;
+                  //   }
+
+                  //   setAmount(bal);
+                  // }}
+                >
+                  Max
+                </span> */}
               </div>
             </div>
 
-            <button className="bg-[#726CFB] w-full py-4 rounded-lg">
-              List
+            <button
+              disabled={loading}
+              onClick={() => {
+                list(
+                  assets.Tokens.find(
+                    (token) => token.mintAddress === activeCollection
+                  )?.mintAddress === "SOL"
+                    ? "SOL"
+                    : "TOKEN",
+                  assets.Tokens.find(
+                    (token) => token.mintAddress === activeCollection
+                  )?.mintAddress!
+                );
+              }}
+              className="bg-[#726CFB] w-full py-4 rounded-lg"
+            >
+              {loading ? "Loading..." : "List"}
             </button>
           </div>
         )}

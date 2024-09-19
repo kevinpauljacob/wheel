@@ -7,15 +7,25 @@ const gameSchema = new mongoose.Schema(
       required: true,
     },
     reward: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Reward",
       required: true,
+      unique: true,
     },
-    txnSignature: {
+    paymentTxnSignature: {
       type: String,
       required: true,
       unique: true,
-    }
+    },
+    rewardTxnSignature: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    status: {
+      type: String,
+      required: true,
+    },
   },
   { timestamps: true }
 );

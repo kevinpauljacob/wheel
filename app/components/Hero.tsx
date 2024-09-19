@@ -16,7 +16,7 @@ export default function Hero() {
   const [wheelStyle, setWheelStyle] = useState({});
   const [spinData, setSpinData] = useState([]);
 
-  const imageWidth = 177; // Adjust this value based on your image width
+  const imageWidth = 180; // Adjust this value based on your image width
 
   // Function to fetch and set spin data
   const rewardData = async () => {
@@ -38,7 +38,7 @@ export default function Hero() {
   }, []);
 
   // Function to handle the spin
-  const spinWheel = (selectedId) => {
+  const spinWheel = (selectedId: string) => {
     if (isSpinning || !spinData.length) return;
     /*   const selectedIndex = spinData.findIndex(
       (image) => image.id === parseInt(selectedId)
@@ -71,6 +71,12 @@ export default function Hero() {
         transform: `translateX(-${selectedIndex * imageWidth}px)`,
       });
     }, 4000); // Duration should match the transition time (4s)
+  };
+
+  const handleSpin = () => {
+    setTimeout(() => {
+      spinWheel("2");
+    }, 1000);
   };
   return (
     <main className="flex bg-secondary text-primary lg:min-h-screen overflow-hidden">
@@ -114,6 +120,8 @@ export default function Hero() {
                   <div className="relative mb-1 lg:mb-2 w-full">
                     <Image
                       src={image.image || altImage}
+                      height={200}
+                      width={180}
                       alt={`Image ${index}`}
                       className="w-full h-full object-cover"
                     />
@@ -144,20 +152,20 @@ export default function Hero() {
             </button>
             <button
               onClick={() => {
-                spinWheel(outcome);
+                handleSpin();
               }}
               disabled={isSpinning}
               className="bg-secondary text-primary font-bold uppercase border-[3px] border-primary rounded-[10px] w-full p-4"
             >
               spin
             </button>
-            <input
+            {/*     <input
               type="number"
               value={outcome}
               onChange={(e) => setOutcome(e.target.value)}
               placeholder="Enter Image ID"
               className="p-2 border border-gray-300 rounded"
-            />
+            /> */}
           </div>
         </div>
         <Image

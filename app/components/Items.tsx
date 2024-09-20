@@ -390,7 +390,7 @@ const Items: React.FC = () => {
               <div className="group flex h-11 w-full cursor-pointer items-center rounded-[8px] bg-[#202329] pl-4 pr-2.5">
                 <input
                   id="amount"
-                  value={amount}
+                  value={amount === 0 ? "" : amount.toString()}
                   onChange={(e) => setAmount(parseFloat(e?.target?.value ?? 0))}
                   type={"number"}
                   lang="en"

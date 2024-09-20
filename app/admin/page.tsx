@@ -24,7 +24,7 @@ export default function Admin() {
         <div>
           <div className="flex items-center border-b border-white/20 ">
             <div
-              className={`px-10 py-3 border-b-[3px]  ${
+              className={`px-10 py-3 border-b-[3px] cursor-pointer ${
                 activeTab === "items"
                   ? "border-[#FDC82F]"
                   : "border-transparent"
@@ -34,7 +34,7 @@ export default function Admin() {
               Items
             </div>
             <div
-              className={`px-10 py-3 border-b-[3px] ${
+              className={`px-10 py-3 border-b-[3px] cursor-pointer ${
                 activeTab === "listings"
                   ? "border-[#FDC82F]"
                   : "border-transparent"

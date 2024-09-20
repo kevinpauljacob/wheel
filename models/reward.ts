@@ -40,11 +40,16 @@ const rewardSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Game",
       sparse: true,
-      unique: true
+      unique: true,
     },
     txnSignature: {
       type: String,
       required: true,
+      unique: true,
+    },
+    deleteTxnSignature: {
+      type: String,
+      sparse: true,
       unique: true,
     },
   },

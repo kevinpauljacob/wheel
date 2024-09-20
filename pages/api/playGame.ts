@@ -77,7 +77,7 @@ export default async function handler(
     const rewards = await Reward.find({
       expired: false,
       disabled: false,
-      game: { $exists: false },
+      deleteTxnSignature: { $exists: false },
     });
 
     if (!rewards || rewards.length === 0)

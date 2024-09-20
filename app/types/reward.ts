@@ -5,7 +5,9 @@ export interface Reward {
   name: string;
   image?: string;
   probability: number;
+  disabled: boolean;
+  expired: boolean
   amount: number;
 }
 
-export type RewardType = "CNFT" | "PNFT" | "TOKEN" | "SOL"
+export type RewardType = "CNFT" | "PNFT" | "TOKEN" | "SOL";

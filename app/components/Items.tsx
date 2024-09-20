@@ -46,6 +46,7 @@ const Items: React.FC = () => {
   const [amount, setAmount] = useState<number>(0);
   const [name, setName] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [adding, setAdding] = useState<boolean>(false);
 
   const [assets, setAssets] = useState<Assets>({
     PNFT: {},
@@ -64,135 +65,139 @@ const Items: React.FC = () => {
   };
 
   const getAssets = async () => {
-    if (!wallet.publicKey) return;
+    try {
+      if (!wallet.publicKey) return;
 
-    const response = await fetch(
-      "https://mainnet.helius-rpc.com/?api-key=70d82569-44dd-44e4-9135-2c234ac26ff9",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: "text",
-          method: "getAssetsByOwner",
-          params: {
-            ownerAddress: wallet.publicKey.toString(),
-            page: 1,
-            limit: 100,
-            sortBy: {
-              sortBy: "created",
-              sortDirection: "asc",
-            },
-            options: {
-              showUnverifiedCollections: false,
-              showCollectionMetadata: true,
-              showGrandTotal: false,
-              showFungible: true,
-              showNativeBalance: false,
-              showInscription: true,
-              showZeroBalance: false,
-            },
+      const response = await fetch(
+        "https://mainnet.helius-rpc.com/?api-key=70d82569-44dd-44e4-9135-2c234ac26ff9",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        }),
-      }
-    );
-    const data = await response.json();
-
-    console.log("helius", data);
-
-    const assetsData: any[] = data?.result?.items ?? [];
-    const tokens: TokenAccount[] = [];
-    const PNFTS: Collection = { Others: [] };
-    const CNFTS: Collection = { Others: [] };
-
-    assetsData.forEach((asset) => {
-      if (
-        asset?.interface === "FungibleToken" &&
-        asset?.id &&
-        asset?.token_info?.symbol &&
-        asset?.token_info?.price_info?.total_price
-      ) {
-        tokens.push({
-          mintAddress: asset.id,
-          name: asset.token_info.symbol,
-          balance: asset.token_info.price_info.total_price,
-          image: asset?.content?.links?.image ?? "",
-        });
-      } else if (
-        (asset?.interface === "ProgrammableNFT" ||
-          asset?.compression?.compressed) &&
-        asset?.id &&
-        asset?.content?.metadata?.name
-      ) {
-        console.log(
-          asset?.content?.metadata?.name,
-          asset?.compression?.compressed
-        );
-        let collection = "Others";
-        if (
-          asset?.grouping?.length > 0 &&
-          asset?.grouping[0]?.collection_metadata?.name
-        ) {
-          collection = asset?.grouping[0]?.collection_metadata?.name;
-          asset?.compression?.compressed
-            ? (CNFTS[collection] = [])
-            : (PNFTS[collection] = []);
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: "text",
+            method: "getAssetsByOwner",
+            params: {
+              ownerAddress: wallet.publicKey.toString(),
+              page: 1,
+              limit: 100,
+              sortBy: {
+                sortBy: "created",
+                sortDirection: "asc",
+              },
+              options: {
+                showUnverifiedCollections: false,
+                showCollectionMetadata: true,
+                showGrandTotal: false,
+                showFungible: true,
+                showNativeBalance: false,
+                showInscription: true,
+                showZeroBalance: false,
+              },
+            },
+          }),
         }
-        const nft = {
-          name: asset.content.metadata.name,
-          address: asset.id,
-          image: asset?.content?.links?.image ?? "",
-          type: (asset?.compression?.compressed ? "CNFT" : "PNFT") as
-            | "PNFT"
-            | "CNFT",
-        };
-        asset?.compression?.compressed
-          ? CNFTS[collection].push(nft)
-          : PNFTS[collection].push(nft);
-      }
-    });
+      );
+      const data = await response.json();
 
-    const solBalance = await getSolBalance(wallet.publicKey);
+      setLoading(false);
 
-    tokens.push({
-      mintAddress: "SOL",
-      name: "SOL",
-      balance: solBalance,
-      image:
-        "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/8ezDtNNhX91t1NbSLe8xV2PcCEfoQjEm2qDVGjt3rjhg/SOL.svg",
-    });
+      console.log("helius", data);
 
-    console.log("nfts", PNFTS);
-    console.log("cnfts", CNFTS);
-    console.log("tokens", tokens);
+      const assetsData: any[] = data?.result?.items ?? [];
+      const tokens: TokenAccount[] = [];
+      const PNFTS: Collection = { Others: [] };
+      const CNFTS: Collection = { Others: [] };
 
-    setAssets({
-      PNFT: PNFTS,
-      CNFT: CNFTS,
-      Tokens: tokens,
-    });
+      assetsData.forEach((asset) => {
+        if (
+          asset?.interface === "FungibleToken" &&
+          asset?.id &&
+          asset?.token_info?.symbol &&
+          asset?.token_info?.price_info?.total_price
+        ) {
+          tokens.push({
+            mintAddress: asset.id,
+            name: asset.token_info.symbol,
+            balance: asset.token_info.price_info.total_price,
+            image: asset?.content?.links?.image ?? "",
+          });
+        } else if (
+          (asset?.interface === "ProgrammableNFT" ||
+            asset?.compression?.compressed) &&
+          asset?.id &&
+          asset?.content?.metadata?.name
+        ) {
+          let collection = "Others";
+          if (
+            asset?.grouping?.length > 0 &&
+            asset?.grouping[0]?.collection_metadata?.name
+          ) {
+            collection = asset?.grouping[0]?.collection_metadata?.name;
+            asset?.compression?.compressed
+              ? (CNFTS[collection] = [])
+              : (PNFTS[collection] = []);
+          }
+          const nft = {
+            name: asset.content.metadata.name,
+            address: asset.id,
+            image: asset?.content?.links?.image ?? "",
+            type: (asset?.compression?.compressed ? "CNFT" : "PNFT") as
+              | "PNFT"
+              | "CNFT",
+          };
+          asset?.compression?.compressed
+            ? CNFTS[collection].push(nft)
+            : PNFTS[collection].push(nft);
+        }
+      });
 
-    setActiveCollection(Object.keys(PNFTS)[0] || "Others");
+      const solBalance = await getSolBalance(wallet.publicKey);
+
+      tokens.push({
+        mintAddress: "SOL",
+        name: "SOL",
+        balance: solBalance,
+        image:
+          "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/8ezDtNNhX91t1NbSLe8xV2PcCEfoQjEm2qDVGjt3rjhg/SOL.svg",
+      });
+
+      console.log("nfts", PNFTS);
+      console.log("cnfts", CNFTS);
+      console.log("tokens", tokens);
+
+      setAssets({
+        PNFT: PNFTS,
+        CNFT: CNFTS,
+        Tokens: tokens,
+      });
+
+      setActiveCollection(Object.keys(PNFTS)[0] || "Others");
+    } catch (e) {
+      console.error("Failed to fetch assets", e);
+    }
   };
 
-  const list = async (type: string, address: string, nft?: NFT) => {
-    setLoading(true);
+  const list = async (
+    type: string,
+    address: string,
+    reward: TokenAccount | NFT
+  ) => {
+    setAdding(true);
     console.log(type, address, amount);
     let rewardAmount = amount;
-    let rewardImage = "";
     let rewardName = name;
-    if (!type || !address) return;
+    if (!type || !address || !reward) return;
     if (
       (type === "TOKEN" || type === "SOL") &&
       (!rewardAmount || rewardAmount <= 0 || !name || name.length <= 0)
     )
       return;
-    if (type === "NFT") {
-      if (!nft) return;
-      rewardImage = nft.image;
-      rewardName = nft.name;
+    if (type === "CNFT") {
+      if (!reward?.name) return;
+      rewardName = reward.name;
       rewardAmount = 1;
     }
     const response = await listReward(
@@ -200,27 +205,29 @@ const Items: React.FC = () => {
       address,
       type,
       rewardName,
-      rewardImage,
+      reward?.image ?? "",
       rewardAmount
     );
 
     console.log(response);
 
-    setLoading(false);
+    setAdding(false);
   };
 
   useEffect(() => {
     if (wallet.publicKey) {
+      setLoading(true);
       getAssets();
     }
   }, [wallet.publicKey]);
 
   if (
-    Object.keys(assets.PNFT).length === 0 &&
-    Object.keys(assets.CNFT).length === 0 &&
-    assets.Tokens.length === 0
+    loading ||
+    (Object.keys(assets.PNFT).length === 0 &&
+      Object.keys(assets.CNFT).length === 0 &&
+      assets.Tokens.length === 0)
   )
-    return <div></div>;
+    return <div>Loading...</div>;
 
   return (
     <div className="flex gap-8">
@@ -311,7 +318,7 @@ const Items: React.FC = () => {
                         }}
                         className="text-xs bg-[#726CFB] rounded-[5px] py-1"
                       >
-                        List
+                        {adding ? "Adding" : "List"}
                       </button>
                     </div>
                   </div>
@@ -444,12 +451,15 @@ const Items: React.FC = () => {
                     : "TOKEN",
                   assets.Tokens.find(
                     (token) => token.mintAddress === activeCollection
-                  )?.mintAddress!
+                  )?.mintAddress!,
+                  assets.Tokens.find(
+                    (token) => token.mintAddress === activeCollection
+                  )!
                 );
               }}
               className="bg-[#726CFB] w-full py-4 rounded-lg"
             >
-              {loading ? "Loading..." : "List"}
+              {adding ? "Adding" : "List"}
             </button>
           </div>
         )}

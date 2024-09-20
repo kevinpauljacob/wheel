@@ -8,17 +8,33 @@ import {
   ComputeBudgetProgram,
   VersionedTransaction,
   BlockhashWithExpiryBlockHeight,
+  AccountMeta,
 } from "@solana/web3.js";
 import {
   getAssociatedTokenAddressSync,
   getOrCreateAssociatedTokenAccount,
-  transfer,
   getAssociatedTokenAddress,
   createAssociatedTokenAccountIdempotentInstruction,
   createTransferInstruction,
 } from "@solana/spl-token";
-import { Metaplex, walletAdapterIdentity } from "@metaplex-foundation/js";
+import { Metaplex } from "@metaplex-foundation/js";
 import { Reward } from "@/app/types/reward";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import {
+  createTransferInstruction as gumCreateTransferInstruction,
+  PROGRAM_ID as BUBBLEGUM_PROGRAM_ID,
+} from "@metaplex-foundation/mpl-bubblegum";
+import {
+  createSignerFromKeypair,
+  signerIdentity,
+} from "@metaplex-foundation/umi";
+import { walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
+import {
+  ConcurrentMerkleTreeAccount,
+  SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
+  SPL_NOOP_PROGRAM_ID,
+} from "@solana/spl-account-compression";
+import bs58 from "bs58";
 
 export const connection = new Connection(
   process.env.NEXT_PUBLIC_QNODE_RPC!,
@@ -55,12 +71,14 @@ export const listReward = async (
   type: string,
   name: string,
   image: string,
-  amount: number
+  amount: number,
 ) => {
   try {
     if (!wallet.publicKey) throw new Error("Wallet not connected");
 
     const walletId = wallet.publicKey;
+    const assetId = address
+    console.log('in listing', type, name, image)
     let transaction, blockhashWithExpiryBlockHeight;
     if (type === "SOL" || type === "TOKEN") {
       const transferInstruction = await createTokenTransferTransaction(
@@ -72,8 +90,18 @@ export const listReward = async (
       transaction = transferInstruction.transaction;
       blockhashWithExpiryBlockHeight =
         transferInstruction.blockhashWithExpiryBlockHeight;
+    } else if (type === "CNFT") {
+      if (!assetId) throw new Error("Missing Parameters");
+      const transferInstruction = await createCNFTTransferInstruction(
+        assetId,
+        walletId,
+        devWalletPublicKey
+      );
+      transaction = transferInstruction.transaction;
+      blockhashWithExpiryBlockHeight =
+        transferInstruction.blockhashWithExpiryBlockHeight;
     } else return { success: false, message: "In dev" };
-
+    console.log(transaction)
     const signedTxn = await wallet.signTransaction!(transaction);
     const transactionBase64 = signedTxn
       .serialize({ requireAllSignatures: false })
@@ -90,6 +118,7 @@ export const listReward = async (
         amount,
         transactionBase64,
         blockhashWithExpiryBlockHeight,
+        assetId
       }),
       headers: {
         "Content-Type": "application/json",
@@ -97,8 +126,6 @@ export const listReward = async (
     });
 
     const { success, message, reward } = await res.json();
-
-    console.log(message)
 
     if (!success) throw new Error(message);
 
@@ -162,7 +189,7 @@ export const createTokenTransferTransaction = async (
   tokenMint: string,
   signer?: Keypair
 ) => {
-  console.log('creating transaction: ',fromWallet.toString(), toWallet.toString(), amount, tokenMint, signer)
+  // console.log('creating transaction: ',fromWallet.toString(), toWallet.toString(), amount, tokenMint, signer)
   let transaction = new Transaction();
 
   transaction.feePayer = fromWallet;
@@ -243,30 +270,6 @@ export const createTokenTransferTransaction = async (
   return { transaction, blockhashWithExpiryBlockHeight };
 };
 
-const sendNFTReward = async (
-  reward: Reward,
-  userPublicKey: PublicKey,
-  devWallet: Keypair
-) => {
-  if (!reward.address) throw new Error("NFT address not provided");
-
-  //   metaplex.use(
-  //     walletAdapterIdentity({
-  //       publicKey: devWallet.publicKey,
-  //       signTransaction: devWallet.signTransaction,
-  //       signAllTransactions: devWallet.signAllTransactions,
-  //     })
-  //   );
-
-  //   const nft = await metaplex.nfts().findByMint({ mintAddress: reward.address });
-
-  //   await metaplex.nfts().transfer({
-  //     nftOrSft: nft,
-  //     fromOwner: devWallet.publicKey,
-  //     toOwner: userPublicKey,
-  //   });
-};
-
 export const verifyTransaction = (
   transaction: Transaction,
   vTransaction: Transaction
@@ -336,4 +339,134 @@ export async function retryTxn(
 
   if (finalTxn) return finalTxn;
   else throw new Error("Transaction could not be confirmed !");
+}
+
+const getAssetData = async (assetId: any) => {
+  console.log('in get asset data')
+  const assetDataResponse = await (
+    await fetch(process.env.NEXT_PUBLIC_RPC!, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: "my-id",
+        method: "getAsset",
+        params: {
+          id: assetId,
+        },
+      }),
+    })
+  ).json();
+  return assetDataResponse.result;
+};
+
+const getAssetProof = async (assetId: any) => {
+  console.log('in get asset proof')
+  const assetProofResponse = await (
+    await fetch(process.env.NEXT_PUBLIC_RPC!, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: "my-id",
+        method: "getAssetProof",
+        params: {
+          id: assetId,
+        },
+      }),
+    })
+  ).json();
+  return assetProofResponse.result;
+};
+
+export const createCNFTTransferInstruction = async (
+  assetId: any,
+  fromWallet: PublicKey,
+  toWallet: PublicKey
+) => {
+  console.log('in create transacinstruction')
+  let transaction = new Transaction();
+
+  transaction.feePayer = fromWallet;
+  const blockhashWithExpiryBlockHeight = await connection.getLatestBlockhash();
+  transaction.recentBlockhash = blockhashWithExpiryBlockHeight.blockhash;
+
+  const assetData = await getAssetData(assetId);
+  console.log(assetData)
+  const assetProof = await getAssetProof(assetId);
+  console.log(assetProof)
+  const treePublicKey = new PublicKey(assetData.compression.tree);
+
+  const treeAccount = await ConcurrentMerkleTreeAccount.fromAccountAddress(
+    connection,
+    treePublicKey
+  );
+
+  const canopyDepth = treeAccount.getCanopyDepth() || 0;
+  if (!assetProof.proof || assetProof.proof.length === 0) {
+    throw new Error("Proof is empty");
+  }
+  const proofPath: AccountMeta[] = assetProof.proof
+    .map((node: string) => ({
+      pubkey: new PublicKey(node),
+      isSigner: false,
+      isWritable: false,
+    }))
+    .slice(0, assetProof.proof.length - canopyDepth);
+
+  const treeAuthority = treeAccount.getAuthority();
+  const leafOwner = new PublicKey(assetData.ownership.owner);
+  const leafDelegate = assetData.ownership.delegate
+    ? new PublicKey(assetData.ownership.delegate)
+    : leafOwner;
+
+  const transferIx = gumCreateTransferInstruction(
+    {
+      merkleTree: treePublicKey,
+      treeAuthority,
+      leafOwner,
+      leafDelegate,
+      newLeafOwner: toWallet,
+      logWrapper: SPL_NOOP_PROGRAM_ID,
+      compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
+      anchorRemainingAccounts: proofPath,
+    },
+    {
+      root: decode(assetProof.root),
+      dataHash: decode(assetData.compression.data_hash),
+      creatorHash: decode(assetData.compression.creator_hash),
+      nonce: assetData.compression.leaf_id,
+      index: assetData.compression.leaf_id,
+    }
+  );
+
+  transaction.add(transferIx);
+
+  transaction.instructions.forEach((i, index1) => {
+    i.keys.forEach((k) => {
+       console.log(index1, k.pubkey.equals(fromWallet), k.pubkey.toString()) 
+    });
+  });
+
+  transaction.instructions.forEach((i) => {
+    i.keys.forEach((k) => {
+      if (k.pubkey.equals(fromWallet)) {
+        k.isSigner = true;
+        k.isWritable = true;
+      }
+    });
+  });
+
+  return { transaction, blockhashWithExpiryBlockHeight };
+};
+
+function decode(stuff: string) {
+  return bufferToArray(bs58.decode(stuff));
+}
+function bufferToArray(buffer: Uint8Array): number[] {
+  const nums: number[] = [];
+  for (let i = 0; i < buffer.length; i++) {
+    nums.push(buffer[i]);
+  }
+  return nums;
 }

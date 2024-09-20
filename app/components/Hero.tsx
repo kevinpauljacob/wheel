@@ -159,23 +159,23 @@ export default function Hero() {
                 spinData.map((reward, index) => (
                   <div
                     key={index}
-                    className="bg-secondary rounded-2xl  lg:w-[177px] lg:h-[203px] flex-shrink-0 p-2.5 lg:p-4 mr-3"
+                    className="flex flex-col justify-between bg-secondary rounded-2xl  lg:w-[177px] lg:h-[203px] flex-shrink-0 p-2.5 lg:p-4 mr-3"
                   >
-                    <div className="relative mb-1 lg:mb-2 w-full">
+                    <div className="relative mb-1 lg:mb-2 w-full h-[80%]">
                       <Image
                         src={reward?.image ?? altImage}
                         alt={reward.name}
                         width="200"
                         height="200"
-                        className="w-[100px] h-full lg:w-[200px] "
+                        className="w-[100px] h-full lg:w-[200px] rounded-lg"
                       />
-                      <div className="absolute top-1 text-[10px] left-1 lg:text-base bg-secondary text-primary border border-[#FFE072] rounded-md lg:rounded-lg px-1 lg:px-2 lg:py-0.5">
+                      <div className="absolute top-0.5 text-[10px] left-0.5 lg:text-base bg-secondary text-primary border border-[#FFE072] rounded-md lg:rounded-lg px-1 lg:px-2 lg:py-0.5">
                         %{reward.probability}
                       </div>
-                      <h1 className="w-[100px] sm:w-[150px] overflow-hidden whitespace-nowrap text-ellipsis text-xs  sm:text-base">
-                        {reward?.name}
-                      </h1>
                     </div>
+                    <p className="w-[100px] sm:w-[150px] font-bold text-white overflow-hidden whitespace-nowrap text-ellipsis text-xs sm:text-base h-[13%]">
+                      {reward?.name}
+                    </p>
                   </div>
                 ))
               )}

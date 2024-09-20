@@ -45,7 +45,6 @@ body {
   animation: fadeOutDown 0.8s ease forwards;
 }
 
-
 ::-webkit-scrollbar {
   width: 0.3rem;
 }
@@ -56,9 +55,31 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: #555;
-  border-radius: 0.4rem;
+  border-radius: 1rem;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #b4b4b4;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #e2ad4f transparent; /* For Firefox */
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px; /* Width of the scrollbar */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent; /* Background of the track */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #e2ad4f; /* Color of the scrollbar thumb */
+  border-radius: 10px; /* Rounded edges for the thumb */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #c5a03d; /* Slightly darker on hover */
 }

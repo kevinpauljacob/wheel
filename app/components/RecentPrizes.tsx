@@ -28,21 +28,21 @@ export default function RecentPrize() {
 
   return (
     <div
-      className={`z-[100] top-0 left-0 fixed flex justify-end items-center md:items-start bg-[#450D0D]/80 h-screen w-full p-5 md:p-14`}
+      className={`z-[100] top-0 left-0 fixed flex justify-end items-center md:items-start bg-[#450D0D]/80 overflow-hidden h-screen w-full p-5 md:p-14`}
     >
       <div
-        className="relative flex justify-center items-center border-[7px] border-[#FFE072] rounded-[15px] p-5 md:pt-8 md:pb-4 md:px-10"
+        className="relative flex justify-center items-center border-[7px] border-[#FFE072] rounded-[15px] p-5 md:p-10 max-h-[600px]"
         style={{
           background: "linear-gradient(0deg, #E2AD4F -75.32%, #921C1D 83.98%)",
         }}
       >
-        <div className="z-10 flex flex-col justify-center items-center gap-6 w-full h-full">
+        <div className="flex flex-col justify-center items-center gap-6 w-full h-full">
           <p
             className={`${titleFont.className} text-xl sm:text-3xl md:text-[2.5rem] text-[#FFE9BA]`}
           >
             Recent Prizes
           </p>
-          <div>
+          <div className="h-64 overflow-y-scroll custom-scrollbar">
             {loading ? (
               <h1>Loading...</h1>
             ) : (
@@ -77,21 +77,16 @@ export default function RecentPrize() {
 const Prize = ({ game }: { game: Game }) => {
   return (
     <div className="flex items-center gap-5 p-2.5 mb-4">
-      <div>
-        <p className="text-primary font-medium">
-          {obfuscatePubKey(game.wallet)} spinned {timeAgo(game.createdAt)} and
-          got
-        </p>
-      </div>
-      <div className="flex items-center gap-2.5">
-        <p className="text-sm font-bold text-white">{game.rewardName}</p>
-        <Image
-          src={game.rewardImage ?? altImage}
-          alt={game.rewardName}
-          width={50}
-          height={50}
-        />
-      </div>
+      <Image
+        src={game.rewardImage ?? altImage}
+        alt={game.rewardName}
+        width={50}
+        height={50}
+      />
+      <p className="text-primary font-medium">
+        {obfuscatePubKey(game.wallet)} spinned {timeAgo(game.createdAt)} and got{" "}
+        <span className="text-white font-bold">{game.rewardName}</span>
+      </p>
     </div>
   );
 };

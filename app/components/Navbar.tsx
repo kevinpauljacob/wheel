@@ -87,7 +87,7 @@ export default function Navbar() {
       </div>
       <div className="flex gap-4">
         <button
-          className="hidden lg:block font-bold border-[3px] border-accent1 rounded-[10px] px-10 py-2.5"
+          className="hidden lg:block font-bold border-[3px] border-accent1 hover:bg-[#e2ad4f4d] transition-all duration-300 ease-in-out rounded-[10px] px-10 py-2.5"
           onClick={handleRecentPrizes}
         >
           Recent Prizes
@@ -113,7 +113,7 @@ export default function Navbar() {
                 href={link.href}
                 className="font-semibold w-full"
               >
-                <button className="font-bold border-[3px] border-accent1 rounded-[10px] px-10 py-4 w-full">
+                <button className="font-bold border-[3px] border-accent1 hover:bg-[#e2ad4f4d] transition-all duration-300 ease-in-out rounded-[10px] px-10 py-4 w-full">
                   {link.name}
                 </button>
               </Link>

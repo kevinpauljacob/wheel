@@ -31,7 +31,7 @@ export default function RecentPrize() {
       className={`z-[100] top-0 left-0 fixed flex justify-end items-center md:items-start bg-[#450D0D]/80 overflow-hidden h-screen w-full p-5 md:p-14`}
     >
       <div
-        className="relative flex justify-center items-center border-[7px] border-[#FFE072] rounded-[15px] p-5 md:p-10 max-h-[600px]"
+        className="relative flex justify-center items-center border-[7px] border-[#FFE072] rounded-[15px] p-5 md:p-10 w-[750px] max-h-[600px]"
         style={{
           background: "linear-gradient(0deg, #E2AD4F -75.32%, #921C1D 83.98%)",
         }}
@@ -44,7 +44,7 @@ export default function RecentPrize() {
           </p>
           <div className="h-64 overflow-y-scroll custom-scrollbar">
             {loading ? (
-              <h1>Loading...</h1>
+              <p className="text-2xl font-bold">Loading...</p>
             ) : (
               games.map((game, index) => <Prize game={game} key={index} />)
             )}

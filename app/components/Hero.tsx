@@ -255,14 +255,6 @@ export default function Hero() {
               <span>
                 <Image src={Sol} alt="SOL Token" width={30} height={30} />
               </span>
-              <span>
-                <Image
-                  src={DropDown}
-                  alt="Dropdown Arrow"
-                  width={20}
-                  height={20}
-                />
-              </span>
             </button>
             <button
               onClick={() => {
@@ -271,7 +263,34 @@ export default function Hero() {
               disabled={isSpinning}
               className="bg-secondary text-primary font-bold uppercase border-[3px] border-primary rounded-[10px] w-full p-4"
             >
-              {isSpinning ? "Loading" : "spin"}
+              {isSpinning ? (
+                <div className="flex items-center justify-center gap-2">
+                  <p>Loading</p>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="lucide lucide-loader animate-spin"
+                  >
+                    <path d="M12 2v4" />
+                    <path d="m16.2 7.8 2.9-2.9" />
+                    <path d="M18 12h4" />
+                    <path d="m16.2 16.2 2.9 2.9" />
+                    <path d="M12 18v4" />
+                    <path d="m4.9 19.1 2.9-2.9" />
+                    <path d="M2 12h4" />
+                    <path d="m4.9 4.9 2.9 2.9" />
+                  </svg>
+                </div>
+              ) : (
+                "spin"
+              )}
             </button>
             {/*     <input
               type="number"
@@ -283,7 +302,7 @@ export default function Hero() {
           </div>
         </div>
         <Image
-          className="-z-10 absolute top-0 left-0 object-cover h-full w-full"
+          className="z-0 absolute top-0 left-0 object-cover h-full w-full"
           src={Circle}
           alt="Circles background asset"
           sizes="100vw"

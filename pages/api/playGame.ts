@@ -9,6 +9,8 @@ import {
   getRandomReward,
   createTokenTransferTransaction,
   retryTxn,
+  createCNFTTransferInstruction,
+  createPNFTTransferInstruction,
 } from "@/utils/transactions";
 import { Reward as RewardType } from "@/app/types/reward";
 import bs58 from "bs58";
@@ -115,38 +117,61 @@ export default async function handler(
       });
     }
 
+    console.log("generated reward", reward);
+
+    let rewardTransaction, rewardBlockhashWithExpiryBlockHeight;
     if (reward.type === "SOL" || reward.type === "TOKEN") {
-      let { transaction, blockhashWithExpiryBlockHeight } =
-        await createTokenTransferTransaction(
-          devWallet.publicKey,
-          walletId,
-          reward.amount,
-          reward.address,
-          devWallet
-        );
-      const signer = Keypair.fromSecretKey(devWallet.secretKey);
-      transaction.partialSign(signer);
+      const transferInstruction = await createTokenTransferTransaction(
+        devWallet.publicKey,
+        walletId,
+        reward.amount,
+        reward.address,
+        devWallet
+      );
+      rewardTransaction = transferInstruction.transaction;
+      rewardBlockhashWithExpiryBlockHeight =
+        transferInstruction.blockhashWithExpiryBlockHeight;
+    } else if (reward.type === "CNFT") {
+      const transferInstruction = await createCNFTTransferInstruction(
+        reward.address,
+        devWallet.publicKey,
+        walletId
+      );
+      rewardTransaction = transferInstruction.transaction;
+      rewardBlockhashWithExpiryBlockHeight =
+        transferInstruction.blockhashWithExpiryBlockHeight;
+    } else if (reward.type === "PNFT") {
+      const transferInstruction = await createPNFTTransferInstruction(
+        new PublicKey(reward.address),
+        devWallet.publicKey,
+        walletId
+      );
+      rewardTransaction = transferInstruction.transaction;
+      rewardBlockhashWithExpiryBlockHeight =
+        transferInstruction.blockhashWithExpiryBlockHeight;
+    } else throw new Error(`Reward type for ${reward._id} not supported.`);
+    const signer = Keypair.fromSecretKey(devWallet.secretKey);
+    rewardTransaction.partialSign(signer);
 
-      let rewardTxnSignature;
-      try {
-        rewardTxnSignature = await retryTxn(
-          connection,
-          transaction,
-          blockhashWithExpiryBlockHeight
-        );
+    let rewardTxnSignature;
+    try {
+      rewardTxnSignature = await retryTxn(
+        connection,
+        transaction,
+        blockhashWithExpiryBlockHeight
+      );
 
-        game.status = "COMPLETED";
-        game.rewardTxnSignature = rewardTxnSignature;
-        await game.save();
-      } catch (e) {
-        console.log(e);
-        game.status = "FAILED";
-        await game.save();
-        return res.status(400).json({
-          success: false,
-          message: "Reward transaction failed",
-        });
-      }
+      game.status = "COMPLETED";
+      game.rewardTxnSignature = rewardTxnSignature;
+      await game.save();
+    } catch (e) {
+      console.log(e);
+      game.status = "FAILED";
+      await game.save();
+      return res.status(400).json({
+        success: false,
+        message: "Reward transaction failed",
+      });
     }
 
     return res.status(200).json({ success: true, message: "", reward });

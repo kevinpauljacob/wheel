@@ -71,14 +71,13 @@ export const listReward = async (
   type: string,
   name: string,
   image: string,
-  amount: number,
+  amount: number
 ) => {
   try {
     if (!wallet.publicKey) throw new Error("Wallet not connected");
 
     const walletId = wallet.publicKey;
-    const assetId = address
-    console.log('in listing', type, name, image)
+    console.log("in listing", type, name, image);
     let transaction, blockhashWithExpiryBlockHeight;
     if (type === "SOL" || type === "TOKEN") {
       const transferInstruction = await createTokenTransferTransaction(
@@ -91,9 +90,17 @@ export const listReward = async (
       blockhashWithExpiryBlockHeight =
         transferInstruction.blockhashWithExpiryBlockHeight;
     } else if (type === "CNFT") {
-      if (!assetId) throw new Error("Missing Parameters");
       const transferInstruction = await createCNFTTransferInstruction(
-        assetId,
+        address,
+        walletId,
+        devWalletPublicKey
+      );
+      transaction = transferInstruction.transaction;
+      blockhashWithExpiryBlockHeight =
+        transferInstruction.blockhashWithExpiryBlockHeight;
+    } else if (type === "PNFT") {
+      const transferInstruction = await createPNFTTransferInstruction(
+        new PublicKey(address),
         walletId,
         devWalletPublicKey
       );
@@ -101,7 +108,7 @@ export const listReward = async (
       blockhashWithExpiryBlockHeight =
         transferInstruction.blockhashWithExpiryBlockHeight;
     } else return { success: false, message: "In dev" };
-    console.log(transaction)
+    console.log(transaction);
     const signedTxn = await wallet.signTransaction!(transaction);
     const transactionBase64 = signedTxn
       .serialize({ requireAllSignatures: false })
@@ -118,7 +125,6 @@ export const listReward = async (
         amount,
         transactionBase64,
         blockhashWithExpiryBlockHeight,
-        assetId
       }),
       headers: {
         "Content-Type": "application/json",
@@ -189,7 +195,14 @@ export const createTokenTransferTransaction = async (
   tokenMint: string,
   signer?: Keypair
 ) => {
-  // console.log('creating transaction: ',fromWallet.toString(), toWallet.toString(), amount, tokenMint, signer)
+  console.log(
+    "creating transaction: ",
+    fromWallet.toString(),
+    toWallet.toString(),
+    amount,
+    tokenMint,
+    signer
+  );
   let transaction = new Transaction();
 
   transaction.feePayer = fromWallet;
@@ -342,7 +355,7 @@ export async function retryTxn(
 }
 
 const getAssetData = async (assetId: any) => {
-  console.log('in get asset data')
+  console.log("in get asset data");
   const assetDataResponse = await (
     await fetch(process.env.NEXT_PUBLIC_RPC!, {
       method: "POST",
@@ -361,7 +374,7 @@ const getAssetData = async (assetId: any) => {
 };
 
 const getAssetProof = async (assetId: any) => {
-  console.log('in get asset proof')
+  console.log("in get asset proof");
   const assetProofResponse = await (
     await fetch(process.env.NEXT_PUBLIC_RPC!, {
       method: "POST",
@@ -384,17 +397,22 @@ export const createCNFTTransferInstruction = async (
   fromWallet: PublicKey,
   toWallet: PublicKey
 ) => {
-  console.log('in create transacinstruction')
+  console.log("in create transacinstruction");
   let transaction = new Transaction();
 
   transaction.feePayer = fromWallet;
   const blockhashWithExpiryBlockHeight = await connection.getLatestBlockhash();
   transaction.recentBlockhash = blockhashWithExpiryBlockHeight.blockhash;
 
+  transaction.add(
+    ComputeBudgetProgram.setComputeUnitLimit({ units: 100_000 }),
+    ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 150_000 })
+  );
+
   const assetData = await getAssetData(assetId);
-  console.log(assetData)
+  console.log(assetData);
   const assetProof = await getAssetProof(assetId);
-  console.log(assetProof)
+  console.log(assetProof);
   const treePublicKey = new PublicKey(assetData.compression.tree);
 
   const treeAccount = await ConcurrentMerkleTreeAccount.fromAccountAddress(
@@ -444,7 +462,7 @@ export const createCNFTTransferInstruction = async (
 
   transaction.instructions.forEach((i, index1) => {
     i.keys.forEach((k) => {
-       console.log(index1, k.pubkey.equals(fromWallet), k.pubkey.toString()) 
+      console.log(index1, k.pubkey.equals(fromWallet), k.pubkey.toString());
     });
   });
 
@@ -470,3 +488,48 @@ function bufferToArray(buffer: Uint8Array): number[] {
   }
   return nums;
 }
+
+export const createPNFTTransferInstruction = async (
+  address: PublicKey,
+  fromWallet: PublicKey,
+  toWallet: PublicKey
+) => {
+  console.log("in create transacinstruction");
+  let transaction = new Transaction();
+
+  transaction.feePayer = fromWallet;
+  const blockhashWithExpiryBlockHeight = await connection.getLatestBlockhash();
+  transaction.recentBlockhash = blockhashWithExpiryBlockHeight.blockhash;
+
+  transaction.add(
+    ComputeBudgetProgram.setComputeUnitLimit({ units: 100_000 }),
+    ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 150_000 })
+  );
+
+  const metaplex = Metaplex.make(connection);
+
+  const pNFT = await metaplex.nfts().findByMint({ mintAddress: address });
+  const transferIx = metaplex.nfts().builders().transfer({
+    nftOrSft: pNFT,
+    toOwner: toWallet,
+  });
+
+  transaction.add(...transferIx.getInstructions());
+
+  transaction.instructions.forEach((i, index1) => {
+    i.keys.forEach((k) => {
+      console.log(index1, k.pubkey.equals(fromWallet), k.pubkey.toString());
+    });
+  });
+
+  transaction.instructions.forEach((i) => {
+    i.keys.forEach((k) => {
+      if (k.pubkey.equals(fromWallet)) {
+        k.isSigner = true;
+        k.isWritable = true;
+      }
+    });
+  });
+
+  return { transaction, blockhashWithExpiryBlockHeight };
+};

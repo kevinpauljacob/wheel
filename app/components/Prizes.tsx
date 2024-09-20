@@ -2,10 +2,35 @@ import Image from "next/image";
 import localfont from "next/font/local";
 import Card from "./Card";
 import Background from "/public/assets/bg-sol.svg";
+import { useEffect, useState } from "react";
+import { Reward } from "../types/reward";
 
 const titleFont = localfont({ src: "../fonts/lightmorning.ttf" });
 
 export default function Prizes() {
+  const [loading, setLoading] = useState<boolean>(false);
+  const [rewards, setRewards] = useState<Reward[]>([]);
+
+  const getRewards = async () => {
+    setLoading(true);
+    const response = await (
+      await fetch("/api/rewards/list", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+    ).json();
+    console.log(response);
+    if (response?.success) setRewards(response?.rewards ?? []);
+    else console.error("Failed to fetch rewards");
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    getRewards();
+  }, []);
+
   return (
     <section className="relative flex flex-col items-center min-h-screen px-5 sm:px-14 md:px-20 pt-4 pb-16">
       <div className="my-12 w-full">
@@ -21,8 +46,8 @@ export default function Prizes() {
           background: "linear-gradient(10deg, #921C1DBF 0%, #E2AD4FCC 83%)",
         }}
       >
-        {Array.from({ length: 18 }, (_, index: number) => (
-          <Card key={index} />
+        {rewards?.map((reward, index: number) => (
+          <Card key={index} reward={reward} />
         ))}
       </div>
       <Image

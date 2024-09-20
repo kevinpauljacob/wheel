@@ -6,6 +6,7 @@ import { ADMIN_WALLETS } from "@/utils/constants";
 import connectDatabase from "@/utils/database";
 import {
   createCNFTTransferInstruction,
+  createPNFTTransferInstruction,
   createTokenTransferTransaction,
   retryTxn,
   verifyTransaction,
@@ -36,7 +37,6 @@ export default async function handler(
       amount,
       transactionBase64,
       blockhashWithExpiryBlockHeight,
-      assetId,
     } = req.body;
 
     if (!wallet || !ADMIN_WALLETS.includes(wallet)) {
@@ -51,8 +51,7 @@ export default async function handler(
       image,
       amount,
       transactionBase64,
-      blockhashWithExpiryBlockHeight,
-      assetId
+      blockhashWithExpiryBlockHeight
     );
 
     if (
@@ -103,18 +102,20 @@ export default async function handler(
       );
       verificationTransaction = transferInstruction.transaction;
     } else if (type === "CNFT") {
-      if (!assetId)
-        return res.status(400).json({
-          success: false,
-          message: "Asset Id missing",
-        });
       const transferInstruction = await createCNFTTransferInstruction(
-        assetId,
+        address,
         walletId,
         devWallet.publicKey
       );
       verificationTransaction = transferInstruction.transaction;
-    } else
+    }else if (type === "PNFT") {
+      const transferInstruction = await createPNFTTransferInstruction(
+        new PublicKey(address),
+        walletId,
+        devWallet.publicKey
+      );
+      verificationTransaction = transferInstruction.transaction;
+    }  else
       return res.status(400).json({
         success: false,
         message: "In dev",

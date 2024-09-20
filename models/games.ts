@@ -19,7 +19,6 @@ const gameSchema = new mongoose.Schema(
     },
     rewardTxnSignature: {
       type: String,
-      required: true,
       unique: true,
     },
     status: {

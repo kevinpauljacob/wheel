@@ -189,12 +189,17 @@ const Items: React.FC = () => {
     console.log(type, address, amount);
     let rewardAmount = amount;
     let rewardName = name;
-    if (!type || !address || !reward) return;
+    if (!type || !address || !reward) {
+      setLoading(false);
+      return;
+    }
     if (
       (type === "TOKEN" || type === "SOL") &&
       (!rewardAmount || rewardAmount <= 0 || !name || name.length <= 0)
-    )
+    ) {
+      setLoading(false);
       return;
+    }
     if (type === "CNFT") {
       if (!reward?.name) return;
       rewardName = reward.name;
@@ -210,7 +215,7 @@ const Items: React.FC = () => {
     );
 
     console.log(response);
-
+    getAssets();
     setAdding(false);
   };
 

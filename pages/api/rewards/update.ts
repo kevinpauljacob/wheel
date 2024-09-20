@@ -45,7 +45,7 @@ export default async function handler(
     const session = await mongoose.startSession();
     session.startTransaction();
 
-    console.log('to delete', deleteRewards)
+    console.log("to delete", deleteRewards);
 
     try {
       const currentRewards = await Reward.find({
@@ -80,7 +80,11 @@ export default async function handler(
         0
       );
       console.log(sumProbabilities);
-      if (Math.abs(sumProbabilities - 100) > 0.001) {
+      if (
+        finalRewards.filter((reward) => !reward.disabled && !reward.expired).length >
+          0 &&
+        Math.abs(sumProbabilities - 100) > 0.001
+      ) {
         throw new Error("Sum of probabilities for active rewards must be 100");
       }
 
@@ -105,9 +109,12 @@ export default async function handler(
       for (const rewardId of deleteRewards) {
         const rewardToDelete = await Reward.findById(rewardId).session(session);
         if (rewardToDelete) {
-          console.log(rewardToDelete.type)
+          console.log(rewardToDelete.type);
           let transaction, blockhashWithExpiryBlockHeight;
-          if (rewardToDelete.type === "SOL" || rewardToDelete.type === "TOKEN") {
+          if (
+            rewardToDelete.type === "SOL" ||
+            rewardToDelete.type === "TOKEN"
+          ) {
             const transferInstruction = await createTokenTransferTransaction(
               devWallet.publicKey,
               walletId,

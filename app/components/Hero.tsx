@@ -10,19 +10,32 @@ import Sol from "/public/assets/sol.svg";
 import DropDown from "/public/assets/dropdown.svg";
 
 import altImage from "/public/assets/storeMyster.png";
-import { RewardType } from "../types/reward";
+import { Reward } from "../types/reward";
+import Card from "./Card";
+import { playWheelGame } from "@/utils/transactions";
+import { useWallet } from "@solana/wallet-adapter-react";
+
 export default function Hero() {
+  const wallet = useWallet();
   const [outcome, setOutcome] = useState("");
   const [isSpinning, setIsSpinning] = useState(false);
   const [wheelStyle, setWheelStyle] = useState({});
-  const [spinData, setSpinData] = useState<RewardType[]>([]);
+  const [spinData, setSpinData] = useState<Reward[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const imageWidth = 150; // Adjust this value based on your image width
 
   // Function to fetch and set spin data
   const rewardData = async () => {
-    const res = await fetch("/api/rewards/list");
-    const data = await res.json();
+    setLoading(true);
+    const data = await (
+      await fetch("/api/rewards/list", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+    ).json();
     const duplicatedImages = [];
     const minImagesNeeded = 50;
     const duplicationTimes = Math.ceil(minImagesNeeded / data.rewards.length);
@@ -30,8 +43,8 @@ export default function Hero() {
     for (let i = 0; i < duplicationTimes; i++) {
       duplicatedImages.push(...data.rewards);
     }
-
     setSpinData(duplicatedImages);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -72,13 +85,20 @@ export default function Hero() {
         transform: `translateX(-${selectedIndex * imageWidth}px)`,
       });
     }, 4000); // Duration should match the transition time (4s)
+    rewardData();
   };
 
-  const handleSpin = () => {
-    setTimeout(() => {
-      spinWheel("2");
-    }, 1000);
+  const handleSpin = async () => {
+    const response = await playWheelGame(wallet, 0.001);
+
+    if (response.success) {
+      const rewardIndex = spinData.findIndex(
+        (reward) => reward._id === response.reward._id
+      );
+      spinWheel(`${rewardIndex}`);
+    }
   };
+
   return (
     <main className="flex bg-secondary text-primary lg:min-h-screen overflow-hidden">
       <div className="relative flex flex-col items-center justify-start lg:justify-center lg:gap-16 w-full lg:w-3/4 py-10 sm:py-16 lg:py-20 px-5">
@@ -113,23 +133,25 @@ export default function Hero() {
               height={200}
             />
             <div className="flex" style={wheelStyle}>
-              {spinData.map((image, index) => (
+              {spinData.map((reward, index) => (
                 <div
                   key={index}
                   className="bg-secondary rounded-2xl  lg:w-[177px] lg:h-[203px] flex-shrink-0 p-2.5 lg:p-4 mr-3"
                 >
                   <div className="relative mb-1 lg:mb-2 w-full">
                     <Image
-                      src={image.image || altImage}
-                      height={200}
-                      width={180}
-                      alt={`Image ${index}`}
-                      className="w-full h-full object-cover"
+                      src={reward?.image ?? altImage}
+                      alt={reward.name}
+                      width="200"
+                      height="200"
+                      className="w-[100px] h-full lg:w-[200px] "
                     />
                     <div className="absolute top-0 text-[10px] lg:text-base bg-secondary text-primary border border-[#FFE072] rounded-md lg:rounded-lg px-1 lg:px-2 lg:py-0.5">
-                      {index - 1}
+                      %{reward.probability} {index - 1}
                     </div>
-                    <h1>{image?.name}</h1>
+                    <h1 className="w-[150px] overflow-hidden whitespace-nowrap text-ellipsis">
+                      {reward?.name}
+                    </h1>
                   </div>
                 </div>
               ))}

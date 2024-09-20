@@ -82,9 +82,11 @@ const NFTTable: React.FC = () => {
 
   const validateChanges = (rewards: Reward[]) => {
     const valid =
-      rewards.reduce((sum, nft) => {
-        return !nft.disabled ? sum + nft.probability : sum;
-      }, 0) === 100;
+      rewards.filter((reward) => !reward.disabled && !reward.expired).length > 0
+        ? rewards.reduce((sum, nft) => {
+            return !nft.disabled && !nft.expired ? sum + nft.probability : sum;
+          }, 0) === 100
+        : true;
     setIsValid(valid);
   };
 

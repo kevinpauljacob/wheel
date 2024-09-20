@@ -10,11 +10,12 @@ import Sol from "/public/assets/sol.svg";
 import DropDown from "/public/assets/dropdown.svg";
 
 import altImage from "/public/assets/storeMyster.png";
+import { RewardType } from "../types/reward";
 export default function Hero() {
   const [outcome, setOutcome] = useState("");
   const [isSpinning, setIsSpinning] = useState(false);
   const [wheelStyle, setWheelStyle] = useState({});
-  const [spinData, setSpinData] = useState([]);
+  const [spinData, setSpinData] = useState<RewardType[]>([]);
 
   const imageWidth = 150; // Adjust this value based on your image width
 

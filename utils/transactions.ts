@@ -17,7 +17,7 @@ import {
   createAssociatedTokenAccountIdempotentInstruction,
   createTransferInstruction,
 } from "@solana/spl-token";
-import { Metaplex } from "@metaplex-foundation/js";
+import { Metaplex, walletAdapterIdentity } from "@metaplex-foundation/js";
 import { Reward } from "@/app/types/reward";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import {
@@ -28,13 +28,14 @@ import {
   createSignerFromKeypair,
   signerIdentity,
 } from "@metaplex-foundation/umi";
-import { walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
+// import { walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
 import {
   ConcurrentMerkleTreeAccount,
   SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
   SPL_NOOP_PROGRAM_ID,
 } from "@solana/spl-account-compression";
 import bs58 from "bs58";
+import { AnchorProvider, Wallet } from "@project-serum/anchor";
 
 export const connection = new Connection(
   process.env.NEXT_PUBLIC_QNODE_RPC!,
@@ -502,15 +503,23 @@ export const createPNFTTransferInstruction = async (
   transaction.recentBlockhash = blockhashWithExpiryBlockHeight.blockhash;
 
   transaction.add(
-    ComputeBudgetProgram.setComputeUnitLimit({ units: 100_000 }),
-    ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 150_000 })
+    ComputeBudgetProgram.setComputeUnitLimit({ units: 1000000 }),
+    ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 100000 })
   );
 
   const metaplex = Metaplex.make(connection);
 
+  const provider = new AnchorProvider(
+    connection,
+    { publicKey: fromWallet } as unknown as Wallet,
+    AnchorProvider.defaultOptions()
+  );
+  metaplex.use(walletAdapterIdentity(provider.wallet));
+
   const pNFT = await metaplex.nfts().findByMint({ mintAddress: address });
   const transferIx = metaplex.nfts().builders().transfer({
     nftOrSft: pNFT,
+    fromOwner: fromWallet,
     toOwner: toWallet,
   });
 
@@ -528,6 +537,11 @@ export const createPNFTTransferInstruction = async (
         k.isSigner = true;
         k.isWritable = true;
       }
+
+      // if (k.pubkey.equals(SystemProgram.programId)) {
+      //   k.isSigner = false;
+      //   k.isWritable = false;
+      // }
     });
   });
 

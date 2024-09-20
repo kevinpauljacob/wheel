@@ -82,6 +82,7 @@ const Prize = ({ game }: { game: Game }) => {
         alt={game.rewardName}
         width={50}
         height={50}
+        className="rounded-lg"
       />
       <p className="text-primary font-medium">
         {obfuscatePubKey(game.wallet)} spinned {timeAgo(game.createdAt)} and got{" "}

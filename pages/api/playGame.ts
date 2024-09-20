@@ -45,7 +45,7 @@ export default async function handler(
       Buffer.from(transactionBase64, "base64")
     );
 
-    let { transaction: verificationTransaction } =
+    const { transaction: verificationTransaction } =
       await createTokenTransferTransaction(
         walletId,
         devWallet.publicKey,

@@ -17,15 +17,23 @@ import { AppContext } from "../context/AppContext";
 
 export default function Hero() {
   const wallet = useWallet();
-  const { setCurrentReward, setYourPrize } = useContext(AppContext);
-  // const [outcome, setOutcome] = useState("");
+  const [outcome, setOutcome] = useState("");
   const [isSpinning, setIsSpinning] = useState(false);
   const [wheelStyle, setWheelStyle] = useState({});
   const [spinData, setSpinData] = useState<Reward[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [spinning, setSpinningg] = useState<boolean>(false);
-
-  const imageWidth = 150; // Adjust this value based on your image width
+  const [imageWidth, setImageWidth] = useState(150); // Default image width for large screens
+  const [minimumImages, setMinimumImages] = useState(50); // Minimum number of images to display
+  // Adjust image width based on screen size
+  const handleResize = () => {
+    if (window.innerWidth <= 640) {
+      setImageWidth(100); // Small screens
+      setMinimumImages(75);
+    } else {
+      setImageWidth(150); // Larger screens
+      setMinimumImages(50);
+    }
+  };
 
   // Function to fetch and set spin data
   const rewardData = async () => {
@@ -39,8 +47,8 @@ export default function Hero() {
       })
     ).json();
     const duplicatedImages = [];
-    const minImagesNeeded = 50;
-    const duplicationTimes = Math.ceil(minImagesNeeded / data.rewards.length);
+
+    const duplicationTimes = Math.ceil(minimumImages / data.rewards.length);
 
     for (let i = 0; i < duplicationTimes; i++) {
       duplicatedImages.push(...data.rewards);
@@ -50,12 +58,19 @@ export default function Hero() {
   };
 
   useEffect(() => {
+    // Set initial image width
     rewardData();
+
+    handleResize();
+    // Add event listener to update width on resize
+    window.addEventListener("resize", handleResize);
+    // Cleanup event listener on component unmount
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Function to handle the spin
   const spinWheel = (selectedId: string) => {
-    if (!spinData.length) return;
+    if (isSpinning || !spinData.length) return;
     /*   const selectedIndex = spinData.findIndex(
       (image) => image.id === parseInt(selectedId)
     ); */
@@ -65,6 +80,7 @@ export default function Hero() {
       return;
     }
 
+    setIsSpinning(true);
     const totalSpins = 1; // Number of complete spins
     const stopPosition =
       (totalSpins * spinData.length + selectedIndex) * imageWidth;
@@ -80,18 +96,16 @@ export default function Hero() {
     // Reset after spin ends
     setTimeout(() => {
       setIsSpinning(false);
-      setYourPrize(true);
       // Ensures the wheel stops on the exact image without the offset
       setWheelStyle({
         transition: "none",
         transform: `translateX(-${selectedIndex * imageWidth}px)`,
       });
-      // rewardData();
     }, 4000); // Duration should match the transition time (4s)
+    rewardData();
   };
 
   const handleSpin = async () => {
-    setIsSpinning(true);
     const response = await playWheelGame(wallet, 0.001);
 
     if (response.success) {
@@ -99,7 +113,6 @@ export default function Hero() {
         (reward) => reward._id === response.reward._id
       );
       spinWheel(`${rewardIndex}`);
-      setCurrentReward(response.reward);
     }
   };
 
@@ -153,10 +166,10 @@ export default function Hero() {
                         height="200"
                         className="w-[100px] h-full lg:w-[200px] "
                       />
-                      <div className="absolute top-0 text-[10px] lg:text-base bg-secondary text-primary border border-[#FFE072] rounded-md lg:rounded-lg px-1 lg:px-2 lg:py-0.5">
+                      <div className="absolute top-1 text-[10px] left-1 lg:text-base bg-secondary text-primary border border-[#FFE072] rounded-md lg:rounded-lg px-1 lg:px-2 lg:py-0.5">
                         %{reward.probability}
                       </div>
-                      <h1 className="w-[150px] overflow-hidden whitespace-nowrap text-ellipsis">
+                      <h1 className="w-[100px] sm:w-[150px] overflow-hidden whitespace-nowrap text-ellipsis text-xs  sm:text-base">
                         {reward?.name}
                       </h1>
                     </div>

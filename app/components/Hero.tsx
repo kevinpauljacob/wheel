@@ -27,6 +27,56 @@ export default function Hero() {
   const [imageWidth, setImageWidth] = useState(150); // Default image width for large screens
   const [minimumImages, setMinimumImages] = useState(50); // Minimum number of images to display
   // Adjust image width based on screen size
+  const rewards = [
+    {
+      _id: "66ed1cfe31066817e18a6d44",
+      address: "5bxqDourczRoV4s7qtNqUFDH8yQNUZxygnBftFRoMmZj",
+      type: "CNFT",
+      name: "Exodia the Forbidden One",
+      image:
+        "https://cdna.artstation.com/p/assets/images/images/052/118/830/large/julie-almoneda-03.jpg?1658992401",
+      probability: 45,
+      disabled: false,
+      expired: false,
+      amount: 1,
+    },
+    {
+      _id: "66ed3c5c33e335ede6e6eb3b",
+      address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      type: "TOKEN",
+      name: "1_2 USDC",
+      image:
+        "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
+      probability: 10,
+      disabled: false,
+      expired: false,
+      amount: 1,
+    },
+    {
+      _id: "66ed47b7e8801e1be1d12f98",
+      address: "95vxos6ksP1eJeNtSJ1q3wD1u5U132agjx9T5V53hy3S",
+      type: "CNFT",
+      name: "Bybit X Solana AirDrop",
+      image: "https://i.ibb.co/s5HKC5L/image.png",
+      probability: 30,
+      disabled: false,
+      expired: false,
+      amount: 1,
+    },
+    {
+      _id: "66ed49d6fb31769457dff55e",
+      address: "37pAEuqvurc4k8jHQJ8xui4uMpdrbYqn8C8jjAJN1J2V",
+      type: "PNFT",
+      name: "Kathakali #20",
+      image:
+        "https://shdw-drive.genesysgo.net/CJBB5pX7ZBieztPqzZouNnuCndu9GtWDJBrhFo3UuRsg/37pAEuqvurc4k8jHQJ8xui4uMpdrbYqn8C8jjAJN1J2V.png?1",
+      probability: 15,
+      disabled: false,
+      expired: false,
+      amount: 1,
+    },
+  ];
+
   const handleResize = () => {
     if (window.innerWidth <= 640) {
       setImageWidth(100); // Small screens
@@ -40,20 +90,23 @@ export default function Hero() {
   // Function to fetch and set spin data
   const rewardData = async () => {
     setLoading(true);
-    const data = await (
+    /* const data = await (
       await fetch("/api/rewards/list", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
       })
-    ).json();
-    const duplicatedImages: Reward[] = [];
-    const duplicationTimes = Math.ceil(minimumImages / data.rewards.length);
+    ).json(); */
+
+    const duplicatedImages = [];
+    const duplicationTimes = Math.ceil(minimumImages / rewards.length);
 
     for (let i = 0; i < duplicationTimes; i++) {
-      duplicatedImages.push(...data.rewards);
+      duplicatedImages.push(...rewards);
     }
+
+    console.log("🚀 ~ rewardData ~ ̥:", duplicatedImages);
     setSpinData(duplicatedImages);
     setLoading(false);
   };
@@ -103,20 +156,34 @@ export default function Hero() {
         transform: `translateX(-${selectedIndex * imageWidth}px)`,
       });
       // rewardData();
-    }, 4000); // Duration should match the transition time (4s)
+    }, 5000); // Duration should match the transition time (4s)
   };
 
   const handleSpin = async () => {
+    if (wheelStyle.transform !== `translateX(0px)`) {
+      // If the wheel is not at the initial position, reset it
+      setWheelStyle({
+        transition: "none",
+        transform: `translateX(0px)`,
+      });
+
+      // Give a slight delay to ensure the reset is visually applied before the spin starts
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // 100ms delay
+    }
     setIsSpinning(true);
-    const response = await playWheelGame(wallet, 0.001);
+    /*  const response = await playWheelGame(wallet, 0.001);
 
     if (response.success) {
       const rewardIndex = spinData.findIndex(
         (reward) => reward._id === response.reward._id
-      );
-      spinWheel(`${rewardIndex}`);
-      setCurrentReward(response.reward);
-    }
+      ); */
+    const randomIndex = Math.floor(Math.random() * 3) + 1;
+    alert(randomIndex);
+    spinWheel(`${randomIndex}`);
+    const selectedReward = spinData[randomIndex + 1];
+    setTimeout(() => {
+      setCurrentReward(selectedReward);
+    }, 4000);
   };
 
   return (
@@ -170,7 +237,7 @@ export default function Hero() {
                         className="w-[100px] h-full lg:w-[200px] rounded-lg"
                       />
                       <div className="absolute top-0.5 text-[10px] left-0.5 lg:text-base bg-secondary text-primary border border-[#FFE072] rounded-md lg:rounded-lg px-1 lg:px-2 lg:py-0.5">
-                        %{reward.probability}
+                        %{reward.probability}+ {index}
                       </div>
                     </div>
                     <p className="w-[100px] sm:w-[150px] font-bold text-white overflow-hidden whitespace-nowrap text-ellipsis text-xs sm:text-base h-[13%]">

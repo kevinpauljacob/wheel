@@ -4,12 +4,13 @@ import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import Hero from "@/app/components/Hero";
 import Prizes from "@/app/components/Prizes";
-import Modal from "@/app/components/Modal";
+import RecentPrizes from "@/app/components/RecentPrizes";
+import YourPrize from "./components/YourPrize";
 import { AppContext } from "@/app/context/AppContext";
 import Headroom from "react-headroom";
 
 export default function Home() {
-  const { isModalOpen } = useContext(AppContext);
+  const { recentPrizes, yourPrize } = useContext(AppContext);
   return (
     <div className="relative">
       <Headroom>
@@ -18,7 +19,8 @@ export default function Home() {
       <Hero />
       <Prizes />
       <Footer />
-      {isModalOpen && <Modal />}
+      {recentPrizes && <RecentPrizes />}
+      {yourPrize && <YourPrize />}
     </div>
   );
 }

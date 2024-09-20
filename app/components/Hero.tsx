@@ -4,7 +4,7 @@ import Lion from "/public/assets/bg-lion.svg";
 import Lion3 from "/public/assets/bg-lion3.png";
 import Circle from "/public/assets/bg-circle.svg";
 import Logo from "/public/assets/roulette-logo.svg";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import Breakpoint from "/public/assets/breakpoint.svg";
 import Sol from "/public/assets/sol.svg";
 import DropDown from "/public/assets/dropdown.svg";
@@ -13,10 +13,12 @@ import altImage from "/public/assets/storeMyster.png";
 import { Reward } from "../types/reward";
 import { playWheelGame } from "@/utils/transactions";
 import { useWallet } from "@solana/wallet-adapter-react";
+import { AppContext } from "../context/AppContext";
 
 export default function Hero() {
   const wallet = useWallet();
-  const [outcome, setOutcome] = useState("");
+  const { setCurrentReward, setYourPrize } = useContext(AppContext);
+  // const [outcome, setOutcome] = useState("");
   const [isSpinning, setIsSpinning] = useState(false);
   const [wheelStyle, setWheelStyle] = useState({});
   const [spinData, setSpinData] = useState<Reward[]>([]);
@@ -78,6 +80,7 @@ export default function Hero() {
     // Reset after spin ends
     setTimeout(() => {
       setIsSpinning(false);
+      setYourPrize(true);
       // Ensures the wheel stops on the exact image without the offset
       setWheelStyle({
         transition: "none",
@@ -96,6 +99,7 @@ export default function Hero() {
         (reward) => reward._id === response.reward._id
       );
       spinWheel(`${rewardIndex}`);
+      setCurrentReward(response.reward);
     }
   };
 

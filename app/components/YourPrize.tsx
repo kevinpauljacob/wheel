@@ -7,7 +7,7 @@ import Lion from "/public/assets/bg-lion2.svg";
 const titleFont = localfont({ src: "../fonts/lightmorning.ttf" });
 
 export default function YourPrize() {
-  const { setYourPrize } = useContext(AppContext);
+  const { currentReward, setYourPrize } = useContext(AppContext);
 
   const handleClose = () => {
     setYourPrize(false);
@@ -26,10 +26,12 @@ export default function YourPrize() {
           >
             Your Prize
           </p>
-          <Card />
-          <button className="bg-[#E2AD4F] font-bold rounded-[10px] w-full py-[1.375rem]">
-            Claim
-          </button>
+          <Card reward={currentReward} />
+          <p
+            className={`${titleFont.className} text-[1.375rem] text-[#FFE9BA]`}
+          >
+            Congratulations
+          </p>
         </div>
         <Image
           src={Lion}
@@ -38,21 +40,25 @@ export default function YourPrize() {
           width={450}
           height={450}
         />
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 22 22"
-          strokeWidth="1.5"
-          stroke="currentColor"
-          className="absolute top-2.5 right-2.5 size-6 text-[#FFE9BA]"
+        <div
+          className="absolute top-2.5 right-2.5 hover:bg-white/10 transition-all duration-300 ease-in-out rounded-lg p-1"
           onClick={handleClose}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M6 18 18 6M6 6l12 12"
-          />
-        </svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 22 22"
+            strokeWidth="1.5"
+            stroke="currentColor"
+            className="size-6 text-[#FFE9BA]"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6 18 18 6M6 6l12 12"
+            />
+          </svg>
+        </div>
       </div>
     </div>
   );

@@ -38,21 +38,25 @@ export default function YourPrize() {
           width={450}
           height={450}
         />
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 22 22"
-          strokeWidth="1.5"
-          stroke="currentColor"
-          className="absolute top-2.5 right-2.5 size-6 text-[#FFE9BA]"
+        <div
+          className="absolute top-2.5 right-2.5 hover:bg-white/10 transition-all duration-300 ease-in-out rounded-lg p-1"
           onClick={handleClose}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M6 18 18 6M6 6l12 12"
-          />
-        </svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 22 22"
+            strokeWidth="1.5"
+            stroke="currentColor"
+            className="size-6 text-[#FFE9BA]"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6 18 18 6M6 6l12 12"
+            />
+          </svg>
+        </div>
       </div>
     </div>
   );

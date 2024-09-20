@@ -1,5 +1,5 @@
 "use client";
-import { useState, useContext } from "react";
+import { useState, useEffect, useContext } from "react";
 import ConnectWallet from "./ConnectWallet";
 import Image from "next/image";
 import Link from "next/link";
@@ -29,6 +29,18 @@ export default function Navbar() {
       setMobileNav(false);
     }
   };
+
+  useEffect(() => {
+    if (mobileNav) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [mobileNav]);
 
   return (
     <nav className="z-[100] flex justify-between bg-primary border-b border-secondary items-center p-5 md:px-10 lg:px-14 xl:px-20 md:py-8 w-full">
@@ -84,8 +96,8 @@ export default function Navbar() {
       </div>
       <div
         className={`${
-          mobileNav ? "top-[5.688rem]" : "fadeOutDown top-[100dvh]"
-        } z-50 fixed  transition-all duration-500 ease-in-out left-0  h-[calc(100dvh-5.688rem)] w-full flex flex-col justify-between items-start bg-primary`}
+          mobileNav ? "top-[91px]" : "fadeOutDown top-[100dvh]"
+        } z-50 fixed  transition-all duration-500 ease-in-out left-0  h-[calc(100dvh-70px)] w-full flex flex-col justify-between items-start bg-primary`}
       >
         <div className="w-full">
           <div className="flex flex-col justify-start items-start gap-4 w-full p-5 sm:p-10">

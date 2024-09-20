@@ -37,7 +37,7 @@ export default function Hero() {
         },
       })
     ).json();
-    const duplicatedImages = [];
+    const duplicatedImages: Reward[] = [];
     const minImagesNeeded = 50;
     const duplicationTimes = Math.ceil(minImagesNeeded / data.rewards.length);
 

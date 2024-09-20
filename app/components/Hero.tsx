@@ -23,7 +23,6 @@ export default function Hero() {
   const [wheelStyle, setWheelStyle] = useState({});
   const [spinData, setSpinData] = useState<Reward[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [spinning, setSpinningg] = useState<boolean>(false);
 
   const imageWidth = 150; // Adjust this value based on your image width
 

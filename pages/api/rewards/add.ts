@@ -1,5 +1,4 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import mongoose from "mongoose";
 import { PublicKey, Transaction, Connection, Keypair } from "@solana/web3.js";
 import Reward from "@/models/reward";
 import { ADMIN_WALLETS } from "@/utils/constants";

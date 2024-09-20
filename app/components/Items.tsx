@@ -9,7 +9,6 @@ import {
   getSolBalance,
   obfuscatePubKey,
 } from "@/utils/helpers";
-import { list } from "postcss";
 import Image from "next/image";
 
 const Items: React.FC = () => {

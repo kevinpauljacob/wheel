@@ -391,7 +391,7 @@ const Items: React.FC = () => {
                 <input
                   id="amount"
                   value={amount === 0 ? "" : amount.toString()}
-                  onChange={(e) => setAmount(parseFloat(e?.target?.value ?? 0))}
+                  onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
                   type={"number"}
                   lang="en"
                   step={"any"}

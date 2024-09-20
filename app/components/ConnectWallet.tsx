@@ -16,7 +16,7 @@ export default function ConnectWallet() {
   return (
     <div className="bg-secondary text-primary cursor-pointer font-bold border-[3px] border-secondary rounded-[10px] px-10 py-2.5">
       {wallet.publicKey && (
-        <strong className="">
+        <strong onClick={logout} className="">
           {obfuscatePubKey(wallet.publicKey.toBase58())}
         </strong>
       )}

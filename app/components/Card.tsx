@@ -1,5 +1,4 @@
 import Image from "next/image";
-import nft from "/public/assets/nft.svg";
 import { Reward } from "../types/reward";
 import altImage from "/public/assets/storeMyster.png";
 

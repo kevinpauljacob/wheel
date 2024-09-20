@@ -11,7 +11,6 @@ import {
   AccountMeta,
 } from "@solana/web3.js";
 import {
-  getAssociatedTokenAddressSync,
   getOrCreateAssociatedTokenAccount,
   getAssociatedTokenAddress,
   createAssociatedTokenAccountIdempotentInstruction,
@@ -19,16 +18,10 @@ import {
 } from "@solana/spl-token";
 import { Metaplex, walletAdapterIdentity } from "@metaplex-foundation/js";
 import { Reward } from "@/app/types/reward";
-import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import {
   createTransferInstruction as gumCreateTransferInstruction,
-  PROGRAM_ID as BUBBLEGUM_PROGRAM_ID,
+  // PROGRAM_ID as BUBBLEGUM_PROGRAM_ID,
 } from "@metaplex-foundation/mpl-bubblegum";
-import {
-  createSignerFromKeypair,
-  signerIdentity,
-} from "@metaplex-foundation/umi";
-// import { walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
 import {
   ConcurrentMerkleTreeAccount,
   SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
@@ -47,7 +40,11 @@ const devWalletPublicKey = new PublicKey(
 );
 
 export const getRandomReward = (rewards: Reward[]): Reward => {
-  const randomNumber = Math.random() * 100;
+  const totalProbability = rewards.reduce((sum, nft) => {
+    return !nft.disabled && !nft.expired ? sum + nft.probability : sum;
+  }, 0);
+  console.log('total probability is', totalProbability)
+  const randomNumber = Math.random() * totalProbability;
   let cumulativeProbability = 0;
   const candidateRewards: Reward[] = [];
 
@@ -537,11 +534,6 @@ export const createPNFTTransferInstruction = async (
         k.isSigner = true;
         k.isWritable = true;
       }
-
-      // if (k.pubkey.equals(SystemProgram.programId)) {
-      //   k.isSigner = false;
-      //   k.isWritable = false;
-      // }
     });
   });
 

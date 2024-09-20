@@ -47,8 +47,10 @@ const NFTTable: React.FC = () => {
       })
     ).json();
     console.log(response);
-    if (response?.success) setRewards(response?.rewards ?? []);
-    else console.error("Failed to fetch rewards");
+    if (response?.success) {
+      setRewards(response?.rewards ?? []);
+      validateChanges(response?.rewards ?? []);
+    } else console.error("Failed to fetch rewards");
     setLoading(false);
   };
 

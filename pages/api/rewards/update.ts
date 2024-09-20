@@ -3,7 +3,7 @@ import Reward from "@/models/reward";
 import { ADMIN_WALLETS } from "@/utils/constants";
 import connectDatabase from "@/utils/database";
 import mongoose from "mongoose";
-import { PublicKey, Transaction, Connection, Keypair } from "@solana/web3.js";
+import { PublicKey, Connection, Keypair } from "@solana/web3.js";
 import bs58 from "bs58";
 import {
   createCNFTTransferInstruction,

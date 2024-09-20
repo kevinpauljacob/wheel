@@ -1,15 +1,30 @@
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import localfont from "next/font/local";
 import Image from "next/image";
-import User from "/public/assets/user.svg";
+import { Game, obfuscatePubKey, timeAgo } from "@/utils/helpers";
 const titleFont = localfont({ src: "../fonts/lightmorning.ttf" });
+import altImage from "/public/assets/storeMyster.png";
 
 export default function RecentPrize() {
   const { setRecentPrizes } = useContext(AppContext);
   const handleClose = () => {
     setRecentPrizes(false);
   };
+
+  const [loading, setLoading] = useState(true);
+  const [games, setGames] = useState<Game[]>([]);
+
+  const getRecentGames = async () => {
+    setLoading(true);
+    const data = await (await fetch("/api/games/list")).json();
+    setGames(data.games);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    getRecentGames();
+  }, []);
 
   return (
     <div
@@ -28,9 +43,11 @@ export default function RecentPrize() {
             Recent Prizes
           </p>
           <div>
-            {[...Array(5)].map((_, index) => (
-              <Prize key={index} />
-            ))}
+            {loading ? (
+              <h1>Loading...</h1>
+            ) : (
+              games.map((game, index) => <Prize game={game} key={index} />)
+            )}
           </div>
         </div>
         <div
@@ -57,17 +74,23 @@ export default function RecentPrize() {
   );
 }
 
-const Prize = () => {
+const Prize = ({ game }: { game: Game }) => {
   return (
     <div className="flex items-center gap-5 p-2.5 mb-4">
       <div>
         <p className="text-primary font-medium">
-          9WzhLi...HY6 spinned 3 minutes ago and got
+          {obfuscatePubKey(game.wallet)} spinned {timeAgo(game.createdAt)} and
+          got
         </p>
       </div>
       <div className="flex items-center gap-2.5">
-        <p className="text-sm font-bold text-white">SMB #1167</p>
-        <Image src={User} alt="User" width={50} height={50} />
+        <p className="text-sm font-bold text-white">{game.rewardName}</p>
+        <Image
+          src={game.rewardImage ?? altImage}
+          alt={game.rewardName}
+          width={50}
+          height={50}
+        />
       </div>
     </div>
   );

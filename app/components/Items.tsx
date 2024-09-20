@@ -1,30 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import {
-  Metaplex,
-  walletAdapterIdentity,
-  OperationOptions,
-  FindNftsByOwnerInput,
-  PublicKey,
-} from "@metaplex-foundation/js";
-import {
-  Connection,
-  clusterApiUrl,
-  ParsedAccountData,
-  LAMPORTS_PER_SOL,
-} from "@solana/web3.js";
-import { connection, listReward } from "@/utils/transactions";
-import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-import {
-  DigitalAsset,
-  mplTokenMetadata,
-} from "@metaplex-foundation/mpl-token-metadata";
-import {
-  fetchAllDigitalAssetByOwner,
-  fetchAllDigitalAssetWithTokenByOwner,
-} from "@metaplex-foundation/mpl-token-metadata";
-import { publicKey } from "@metaplex-foundation/umi";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { listReward } from "@/utils/transactions";
 import {
   Assets,
   Collection,
@@ -33,7 +9,6 @@ import {
   getSolBalance,
   obfuscatePubKey,
 } from "@/utils/helpers";
-import { list } from "postcss";
 import Image from "next/image";
 
 const Items: React.FC = () => {

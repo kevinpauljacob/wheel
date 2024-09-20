@@ -24,7 +24,6 @@ const NFTTable: React.FC = () => {
   const wallet = useWallet();
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [deleteRewards, setDeleteRewards] = useState<Reward[]>([]);
-  const [changes, setChanges] = useState<Reward[]>([]);
   const [isValid, setIsValid] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [updateLoading, setUpdateLoading] = useState<boolean>(false);
@@ -47,8 +46,10 @@ const NFTTable: React.FC = () => {
       })
     ).json();
     console.log(response);
-    if (response?.success) setRewards(response?.rewards ?? []);
-    else console.error("Failed to fetch rewards");
+    if (response?.success) {
+      setRewards(response?.rewards ?? []);
+      validateChanges(response?.rewards ?? []);
+    } else console.error("Failed to fetch rewards");
     setLoading(false);
   };
 
@@ -116,7 +117,7 @@ const NFTTable: React.FC = () => {
     ).json();
 
     if (response?.success) {
-      setChanges(rewards);
+      setRewards(rewards);
       alert("Changes saved successfully");
     } else {
       console.error("Failed to save changes");

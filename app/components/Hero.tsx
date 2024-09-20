@@ -18,13 +18,24 @@ import { AppContext } from "../context/AppContext";
 export default function Hero() {
   const wallet = useWallet();
   const { setCurrentReward, setYourPrize } = useContext(AppContext);
-  // const [outcome, setOutcome] = useState("");
+  const [outcome, setOutcome] = useState("");
   const [isSpinning, setIsSpinning] = useState(false);
   const [wheelStyle, setWheelStyle] = useState({});
   const [spinData, setSpinData] = useState<Reward[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const imageWidth = 150; // Adjust this value based on your image width
+  const [imageWidth, setImageWidth] = useState(150); // Default image width for large screens
+  const [minimumImages, setMinimumImages] = useState(50); // Minimum number of images to display
+  // Adjust image width based on screen size
+  const handleResize = () => {
+    if (window.innerWidth <= 640) {
+      setImageWidth(100); // Small screens
+      setMinimumImages(75);
+    } else {
+      setImageWidth(150); // Larger screens
+      setMinimumImages(50);
+    }
+  };
 
   // Function to fetch and set spin data
   const rewardData = async () => {
@@ -38,8 +49,7 @@ export default function Hero() {
       })
     ).json();
     const duplicatedImages: Reward[] = [];
-    const minImagesNeeded = 50;
-    const duplicationTimes = Math.ceil(minImagesNeeded / data.rewards.length);
+    const duplicationTimes = Math.ceil(minimumImages / data.rewards.length);
 
     for (let i = 0; i < duplicationTimes; i++) {
       duplicatedImages.push(...data.rewards);
@@ -49,12 +59,19 @@ export default function Hero() {
   };
 
   useEffect(() => {
+    // Set initial image width
     rewardData();
+
+    handleResize();
+    // Add event listener to update width on resize
+    window.addEventListener("resize", handleResize);
+    // Cleanup event listener on component unmount
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Function to handle the spin
   const spinWheel = (selectedId: string) => {
-    if (isSpinning || !spinData.length) return;
+    if (!spinData.length) return;
     /*   const selectedIndex = spinData.findIndex(
       (image) => image.id === parseInt(selectedId)
     ); */
@@ -64,7 +81,6 @@ export default function Hero() {
       return;
     }
 
-    setIsSpinning(true);
     const totalSpins = 1; // Number of complete spins
     const stopPosition =
       (totalSpins * spinData.length + selectedIndex) * imageWidth;
@@ -86,11 +102,12 @@ export default function Hero() {
         transition: "none",
         transform: `translateX(-${selectedIndex * imageWidth}px)`,
       });
+      // rewardData();
     }, 4000); // Duration should match the transition time (4s)
-    rewardData();
   };
 
   const handleSpin = async () => {
+    setIsSpinning(true);
     const response = await playWheelGame(wallet, 0.001);
 
     if (response.success) {
@@ -136,28 +153,32 @@ export default function Hero() {
               height={200}
             />
             <div className="flex" style={wheelStyle}>
-              {spinData.map((reward, index) => (
-                <div
-                  key={index}
-                  className="bg-secondary rounded-2xl  lg:w-[177px] lg:h-[203px] flex-shrink-0 p-2.5 lg:p-4 mr-3"
-                >
-                  <div className="relative mb-1 lg:mb-2 w-full">
-                    <Image
-                      src={reward?.image ?? altImage}
-                      alt={reward.name}
-                      width="200"
-                      height="200"
-                      className="w-[100px] h-full lg:w-[200px] "
-                    />
-                    <div className="absolute top-0 text-[10px] lg:text-base bg-secondary text-primary border border-[#FFE072] rounded-md lg:rounded-lg px-1 lg:px-2 lg:py-0.5">
-                      %{reward.probability} {index - 1}
+              {loading ? (
+                <h1>Loading...</h1>
+              ) : (
+                spinData.map((reward, index) => (
+                  <div
+                    key={index}
+                    className="bg-secondary rounded-2xl  lg:w-[177px] lg:h-[203px] flex-shrink-0 p-2.5 lg:p-4 mr-3"
+                  >
+                    <div className="relative mb-1 lg:mb-2 w-full">
+                      <Image
+                        src={reward?.image ?? altImage}
+                        alt={reward.name}
+                        width="200"
+                        height="200"
+                        className="w-[100px] h-full lg:w-[200px] "
+                      />
+                      <div className="absolute top-1 text-[10px] left-1 lg:text-base bg-secondary text-primary border border-[#FFE072] rounded-md lg:rounded-lg px-1 lg:px-2 lg:py-0.5">
+                        %{reward.probability}
+                      </div>
+                      <h1 className="w-[100px] sm:w-[150px] overflow-hidden whitespace-nowrap text-ellipsis text-xs  sm:text-base">
+                        {reward?.name}
+                      </h1>
                     </div>
-                    <h1 className="w-[150px] overflow-hidden whitespace-nowrap text-ellipsis">
-                      {reward?.name}
-                    </h1>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -183,7 +204,7 @@ export default function Hero() {
               disabled={isSpinning}
               className="bg-secondary text-primary font-bold uppercase border-[3px] border-primary rounded-[10px] w-full p-4"
             >
-              spin
+              {isSpinning ? "Loading" : "spin"}
             </button>
             {/*     <input
               type="number"

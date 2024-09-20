@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { Connection, PublicKey, Transaction, Keypair } from "@solana/web3.js";
-import mongoose from "mongoose";
 import Reward from "@/models/reward";
 import Game from "@/models/games";
 import connectDatabase from "@/utils/database";
@@ -157,8 +156,8 @@ export default async function handler(
     try {
       rewardTxnSignature = await retryTxn(
         connection,
-        transaction,
-        blockhashWithExpiryBlockHeight
+        rewardTransaction,
+        rewardBlockhashWithExpiryBlockHeight
       );
 
       game.status = "COMPLETED";

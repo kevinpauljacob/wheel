@@ -46,9 +46,13 @@ export default function Prizes() {
           background: "linear-gradient(10deg, #921C1DBF 0%, #E2AD4FCC 83%)",
         }}
       >
-        {rewards?.map((reward, index: number) => (
-          <Card key={index} reward={reward} />
-        ))}
+        {loading ? (
+          <h1>Loading...</h1>
+        ) : (
+          rewards?.map((reward, index: number) => (
+            <Card key={index} reward={reward} />
+          ))
+        )}
       </div>
       <Image
         className="-z-10 absolute top-0 left-0 object-cover lg:object-fill h-full w-full"

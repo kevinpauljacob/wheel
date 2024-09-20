@@ -16,7 +16,7 @@ export default function Prizes() {
         </h2>
       </div>
       <div
-        className="z-10 grid grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 md:gap-4 border-[7px] border-secondary rounded-[15px] p-3 sm:p-5 "
+        className="z-0 grid grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 md:gap-4 border-[7px] border-secondary rounded-[15px] p-3 sm:p-5 "
         style={{
           background: "linear-gradient(10deg, #921C1DBF 0%, #E2AD4FCC 83%)",
         }}
@@ -26,7 +26,7 @@ export default function Prizes() {
         ))}
       </div>
       <Image
-        className="absolute top-0 left-0 object-cover lg:object-fill h-full w-full"
+        className="-z-10 absolute top-0 left-0 object-cover lg:object-fill h-full w-full"
         src={Background}
         alt="Background asset"
         sizes="100vw"

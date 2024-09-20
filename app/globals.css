@@ -25,8 +25,6 @@ body {
   }
 }
 
-
-
 .fadeInDown {
   animation: fadeInDown 0.8s ease forwards;
 }
@@ -45,4 +43,22 @@ body {
 
 .fadeOutDown {
   animation: fadeOutDown 0.8s ease forwards;
+}
+
+
+::-webkit-scrollbar {
+  width: 0.3rem;
+}
+
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 0.4rem;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b4b4b4;
 }

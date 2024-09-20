@@ -12,7 +12,7 @@ import {
 } from "@solana/wallet-adapter-wallets";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
-const endpoint = process.env.NEXT_PUBLIC_RPC!;
+const endpoint = process.env.NEXT_PUBLIC_QNODE_RPC!;
 
 const wallets = [
   new PhantomWalletAdapter(),
@@ -21,7 +21,6 @@ const wallets = [
 ];
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  console.log(endpoint);
   return (
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>

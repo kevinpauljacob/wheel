@@ -29,6 +29,28 @@ const rewardSchema = new mongoose.Schema(
     disabled: {
       type: Boolean,
       default: false,
+      required: true,
+    },
+    expired: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
+    game: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Game",
+      sparse: true,
+      unique: true,
+    },
+    txnSignature: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    deleteTxnSignature: {
+      type: String,
+      sparse: true,
+      unique: true,
     },
   },
   { timestamps: true }

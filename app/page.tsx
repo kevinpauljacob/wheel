@@ -6,12 +6,15 @@ import Hero from "@/app/components/Hero";
 import Prizes from "@/app/components/Prizes";
 import Modal from "@/app/components/Modal";
 import { AppContext } from "@/app/context/AppContext";
+import Headroom from "react-headroom";
 
 export default function Home() {
   const { isModalOpen } = useContext(AppContext);
   return (
     <div className="relative">
-      <Navbar />
+      <Headroom>
+        <Navbar />
+      </Headroom>
       <Hero />
       <Prizes />
       <Footer />

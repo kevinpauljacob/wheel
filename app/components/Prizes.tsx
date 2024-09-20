@@ -2,14 +2,17 @@ import Image from "next/image";
 import localfont from "next/font/local";
 import Card from "./Card";
 import Background from "/public/assets/bg-sol.svg";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Reward } from "../types/reward";
+import { AppContext } from "../context/AppContext";
 
 const titleFont = localfont({ src: "../fonts/lightmorning.ttf" });
 
 export default function Prizes() {
   const [loading, setLoading] = useState<boolean>(false);
   const [rewards, setRewards] = useState<Reward[]>([]);
+
+  const { yourPrize } = useContext(AppContext);
 
   const getRewards = async () => {
     setLoading(true);
@@ -29,7 +32,7 @@ export default function Prizes() {
 
   useEffect(() => {
     getRewards();
-  }, []);
+  }, [yourPrize]);
 
   return (
     <section className="relative flex flex-col items-center min-h-screen px-5 sm:px-14 md:px-20 pt-4 pb-16">

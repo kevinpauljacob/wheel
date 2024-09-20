@@ -7,7 +7,7 @@ import Lion from "/public/assets/bg-lion2.svg";
 const titleFont = localfont({ src: "../fonts/lightmorning.ttf" });
 
 export default function YourPrize() {
-  const { setYourPrize } = useContext(AppContext);
+  const { currentReward, setYourPrize } = useContext(AppContext);
 
   const handleClose = () => {
     setYourPrize(false);
@@ -26,10 +26,12 @@ export default function YourPrize() {
           >
             Your Prize
           </p>
-          <Card />
-          <button className="bg-[#E2AD4F] font-bold rounded-[10px] w-full py-[1.375rem]">
-            Claim
-          </button>
+          <Card reward={currentReward} />
+          <p
+            className={`${titleFont.className} text-[1.375rem] text-[#FFE9BA]`}
+          >
+            Congratulations
+          </p>
         </div>
         <Image
           src={Lion}

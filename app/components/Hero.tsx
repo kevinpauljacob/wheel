@@ -45,7 +45,7 @@ export default function Hero() {
     if (data?.rewards && data?.rewards?.length > 0) {
       const duplicatedImages: Reward[] = [];
       const duplicationTimes = Math.ceil(
-        minimumImages / data?.rewards?.length ?? 1
+        minimumImages / (data?.rewards?.length ?? 1)
       );
 
       for (let i = 0; i < duplicationTimes; i++) {

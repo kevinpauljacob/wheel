@@ -1,7 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { PublicKey, Transaction, Connection, Keypair } from "@solana/web3.js";
 import Reward from "@/models/reward";
-import { ADMIN_WALLETS } from "@/utils/constants";
 import connectDatabase from "@/utils/database";
 import {
   createCNFTTransferInstruction,
@@ -27,6 +26,8 @@ export default async function handler(
   }
 
   try {
+    const ADMIN_WALLETS =
+      process.env.NEXT_PUBLIC_ADMIN_WALLETS?.split(",") || [];
     const {
       wallet,
       address,
@@ -107,14 +108,14 @@ export default async function handler(
         devWallet.publicKey
       );
       verificationTransaction = transferInstruction.transaction;
-    }else if (type === "PNFT") {
+    } else if (type === "PNFT") {
       const transferInstruction = await createPNFTTransferInstruction(
         new PublicKey(address),
         walletId,
         devWallet.publicKey
       );
       verificationTransaction = transferInstruction.transaction;
-    }  else
+    } else
       return res.status(400).json({
         success: false,
         message: "In dev",

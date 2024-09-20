@@ -1,7 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import Reward from "@/models/reward";
 import connectDatabase from "@/utils/database";
-import { ADMIN_WALLETS } from "@/utils/constants";
 
 export default async function handler(
   req: NextApiRequest,
@@ -14,6 +13,8 @@ export default async function handler(
   }
 
   try {
+    const ADMIN_WALLETS =
+      process.env.NEXT_PUBLIC_ADMIN_WALLETS?.split(",") || [];
     const { wallet } = req.body;
     let filter = {};
     if (!wallet || !ADMIN_WALLETS.includes(wallet))

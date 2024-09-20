@@ -5,13 +5,14 @@ import Navbar from "../components/Navbar";
 import Items from "../components/Items";
 import ListingsTable from "../components/ListingsTable";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { ADMIN_WALLETS } from "@/utils/constants";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function Admin() {
   const wallet = useWallet();
   const [activeTab, setActiveTab] = useState<"items" | "listings">("items");
+
+  const ADMIN_WALLETS = process.env.NEXT_PUBLIC_ADMIN_WALLETS?.split(",") || [];
 
   if (
     !wallet.connected ||

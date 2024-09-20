@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import Reward from "@/models/reward";
-import { ADMIN_WALLETS } from "@/utils/constants";
 import connectDatabase from "@/utils/database";
 import mongoose from "mongoose";
 import { PublicKey, Connection, Keypair } from "@solana/web3.js";
@@ -26,6 +25,8 @@ export default async function handler(
   }
 
   try {
+    const ADMIN_WALLETS =
+      process.env.NEXT_PUBLIC_ADMIN_WALLETS?.split(",") || [];
     const { wallet, updateRewards, deleteRewards } = req.body;
 
     if (!ADMIN_WALLETS.includes(wallet)) {
@@ -81,8 +82,8 @@ export default async function handler(
       );
       console.log(sumProbabilities);
       if (
-        finalRewards.filter((reward) => !reward.disabled && !reward.expired).length >
-          0 &&
+        finalRewards.filter((reward) => !reward.disabled && !reward.expired)
+          .length > 0 &&
         Math.abs(sumProbabilities - 100) > 0.001
       ) {
         throw new Error("Sum of probabilities for active rewards must be 100");

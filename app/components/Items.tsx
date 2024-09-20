@@ -186,7 +186,7 @@ const Items: React.FC = () => {
     reward: TokenAccount | NFT
   ) => {
     setAdding(true);
-    console.log(type, address, amount);
+    console.log(type, address, amount, reward.name);
     let rewardAmount = amount;
     let rewardName = name;
     if (!type || !address || !reward) {
@@ -200,7 +200,7 @@ const Items: React.FC = () => {
       setLoading(false);
       return;
     }
-    if (type === "CNFT") {
+    if (type === "CNFT" || type === "PNFT") {
       if (!reward?.name) return;
       rewardName = reward.name;
       rewardAmount = 1;

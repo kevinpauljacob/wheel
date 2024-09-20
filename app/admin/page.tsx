@@ -4,11 +4,21 @@ import { Inter } from "next/font/google";
 import Navbar from "../components/Navbar";
 import Items from "../components/Items";
 import ListingsTable from "../components/ListingsTable";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { ADMIN_WALLETS } from "@/utils/constants";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export default function Admin() {
+  const wallet = useWallet();
   const [activeTab, setActiveTab] = useState<"items" | "listings">("items");
+
+  if (
+    !wallet.connected ||
+    !wallet.publicKey ||
+    !ADMIN_WALLETS.includes(wallet.publicKey.toString())
+  )
+    return <h1>Unauthorised</h1>;
 
   return (
     <div className="bg-black text-white min-h-screen">

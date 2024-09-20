@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useContext } from "react";
 import ConnectWallet from "./ConnectWallet";
 import Image from "next/image";
 import Link from "next/link";
+import { AppContext } from "../context/AppContext";
 import SmithiiLogo from "/public/assets/smithii-logo.svg";
 import Logo from "/public/assets/logo.svg";
 import { socials } from "./Footer";
@@ -13,10 +14,20 @@ const links = [
 ];
 
 export default function Navbar() {
+  const { recentPrizes, setRecentPrizes } = useContext(AppContext);
   const [mobileNav, setMobileNav] = useState(false);
 
   const handleMobileNav = () => {
     mobileNav ? setMobileNav(false) : setMobileNav(true);
+  };
+
+  const handleRecentPrizes = () => {
+    if (recentPrizes) {
+      setRecentPrizes(false);
+    } else {
+      setRecentPrizes(true);
+      setMobileNav(false);
+    }
   };
 
   return (
@@ -63,7 +74,10 @@ export default function Navbar() {
         ))}
       </div>
       <div className="flex gap-4">
-        <button className="hidden lg:block font-bold border-[3px] border-accent1 rounded-[10px] px-10 py-2.5">
+        <button
+          className="hidden lg:block font-bold border-[3px] border-accent1 rounded-[10px] px-10 py-2.5"
+          onClick={handleRecentPrizes}
+        >
           Recent Prizes
         </button>
         <ConnectWallet />
@@ -75,7 +89,10 @@ export default function Navbar() {
       >
         <div className="w-full">
           <div className="flex flex-col justify-start items-start gap-4 w-full p-5 sm:p-10">
-            <button className="font-bold border-[3px] border-accent1 rounded-[10px] px-10 py-4 w-full">
+            <button
+              className="font-bold border-[3px] border-accent1 rounded-[10px] px-10 py-4 w-full"
+              onClick={handleRecentPrizes}
+            >
               Recent Prizes
             </button>
             {links.map((link, index: number) => (
